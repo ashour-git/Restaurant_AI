@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     // Here you could send to an error tracking service like Sentry
     if (process.env.NODE_ENV === 'production') {
       // Log to external service

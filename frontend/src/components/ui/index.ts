@@ -1,6 +1,6 @@
 export { Badge, OrderStatusBadge, StockBadge } from './Badge';
 export { default as Button, buttonVariants } from './Button';
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './Card';
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './Card';
 export { Input } from './Input';
 export {
     CardSkeleton,

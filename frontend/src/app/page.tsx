@@ -1,27 +1,26 @@
 'use client';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/Card';
+import { OrderStatusBadge, StatCardSkeleton } from '@/components/ui';
 import Button from '@/components/ui/Button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/Card';
 import { useMenuItems, useOrders } from '@/hooks/useApi';
 import { analyticsApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import {
-  ArrowDownRight,
-  ArrowUpRight,
-  DollarSign,
-  RefreshCw,
-  ShoppingCart,
-  TrendingUp,
-  Users,
+    ArrowUpRight,
+    DollarSign,
+    RefreshCw,
+    ShoppingCart,
+    TrendingUp,
+    Users
 } from 'lucide-react';
-import { OrderStatusBadge, StatCardSkeleton } from '@/components/ui';
 
 interface StatCardProps {
   title: string;
