@@ -1,21 +1,48 @@
-import sqlite3
+import asyncio
+import os
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy import text
+from dotenv import load_dotenv
 
-conn = sqlite3.connect("restaurant.db")
-cursor = conn.cursor()
-cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-tables = cursor.fetchall()
-print("Tables in database:")
-for table in tables:
-    print(f"  - {table[0]}")
+load_dotenv()
 
-# Check if employees table has the right columns
-if any("employees" in t for t in tables):
-    cursor.execute("PRAGMA table_info(employees)")
-    cols = cursor.fetchall()
-    print("\nEmployees table columns:")
-    for col in cols:
-        print(f"  - {col[1]}: {col[2]}")
-else:
-    print("\n⚠️  employees table does NOT exist!")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-conn.close()
+async def check_db():
+    if not DATABASE_URL:
+        print("❌ DATABASE_URL not found in environment variables")
+        return
+
+    print(f"Checking database connection to: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else DATABASE_URL}")
+    
+    try:
+        engine = create_async_engine(DATABASE_URL)
+        async with engine.connect() as conn:
+            result = await conn.execute(text("SELECT 1"))
+            print("✅ Database connection successful!")
+            
+            # List tables
+            # This query works for PostgreSQL
+            if "postgresql" in DATABASE_URL:
+                result = await conn.execute(text(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
+                ))
+                tables = result.fetchall()
+                print("\nTables in database:")
+                for table in tables:
+                    print(f"  - {table[0]}")
+            else:
+                # Fallback for SQLite
+                result = await conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
+                tables = result.fetchall()
+                print("\nTables in database:")
+                for table in tables:
+                    print(f"  - {table[0]}")
+
+        await engine.dispose()
+        
+    except Exception as e:
+        print(f"❌ Database connection failed: {e}")
+
+if __name__ == "__main__":
+    asyncio.run(check_db())
