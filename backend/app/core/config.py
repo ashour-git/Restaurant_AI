@@ -46,15 +46,23 @@ class Settings(BaseSettings):
     REDIS_CACHE_TTL: int = 3600  # 1 hour
 
     # CORS - comma-separated string from env, converted to list via computed_field
+    # In production, add your Vercel domain: https://your-app.vercel.app
     CORS_ORIGINS_STR: str = (
-        "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,http://127.0.0.1:3003"
+        "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,"
+        "http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,http://127.0.0.1:3003,"
+        "https://*.vercel.app"
     )
 
     @computed_field
     @property
     def CORS_ORIGINS(self) -> list[str]:
-        """Parse CORS origins from comma-separated string."""
-        return [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",") if origin.strip()]
+        """Parse CORS origins from comma-separated string, supporting wildcards."""
+        origins = []
+        for origin in self.CORS_ORIGINS_STR.split(","):
+            origin = origin.strip()
+            if origin:
+                origins.append(origin)
+        return origins
 
     # ML Models
     ML_MODELS_PATH: str = "./ml/models"

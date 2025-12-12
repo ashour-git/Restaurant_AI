@@ -7,13 +7,35 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
 
-  // Optimize bundle
+  // Experimental features
   experimental: {
+    // Optimize bundle - packages to tree-shake
     optimizePackageImports: ['lucide-react', 'recharts', '@tanstack/react-query'],
   },
 
-  // Enable SWC minification
-  swcMinify: true,
+  // Image optimization
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
+
+  // Compiler options for production
+  compiler: {
+    // Remove console.log in production
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+  },
+
+  // Logging configuration
+  logging: {
+    fetches: {
+      fullUrl: process.env.NODE_ENV === 'development',
+    },
+  },
 
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1',
@@ -21,15 +43,16 @@ const nextConfig = {
 
   // API rewrites for development
   async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/:path*`,
+        destination: `${apiUrl}/:path*`,
       },
     ];
   },
 
-  // Headers for performance
+  // Headers for security and performance
   async headers() {
     return [
       {
@@ -38,6 +61,24 @@ const nextConfig = {
           {
             key: 'X-DNS-Prefetch-Control',
             value: 'on',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin',
+          },
+        ],
+      },
+      {
+        // Cache static assets for 1 year
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },

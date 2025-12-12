@@ -32,8 +32,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="http://localhost:5000" />
-        <link rel="dns-prefetch" href="http://localhost:5000" />
+        {process.env.NEXT_PUBLIC_API_URL && (
+          <>
+            <link rel="preconnect" href={new URL(process.env.NEXT_PUBLIC_API_URL).origin} />
+            <link rel="dns-prefetch" href={new URL(process.env.NEXT_PUBLIC_API_URL).origin} />
+          </>
+        )}
       </head>
       <body className={inter.className}>
         <Providers>
