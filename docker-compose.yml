@@ -1,0 +1,126 @@
+# Restaurant SaaS Platform - Docker Compose Configuration
+# Orchestrates all services: PostgreSQL, Redis, Backend API, Frontend
+
+version: "3.8"
+
+services:
+  # PostgreSQL Database with pgvector extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: restaurant_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-restaurant}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-restaurant123}
+      POSTGRES_DB: ${POSTGRES_DB:-restaurant_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-restaurant} -d ${POSTGRES_DB:-restaurant_db}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - restaurant_network
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: restaurant_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - restaurant_network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: restaurant_backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-restaurant}:${POSTGRES_PASSWORD:-restaurant123}@postgres:5432/${POSTGRES_DB:-restaurant_db}
+      - REDIS_URL=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - SECRET_KEY=${SECRET_KEY:-your-super-secret-key-change-in-production}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - DEBUG=${DEBUG:-true}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+      - ./ml:/app/ml
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - restaurant_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: restaurant_frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - NODE_ENV=${NODE_ENV:-development}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - restaurant_network
+    command: npm run dev
+
+  # ML Model Training Service (optional, for batch training)
+  ml-trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    container_name: restaurant_ml_trainer
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-restaurant}:${POSTGRES_PASSWORD:-restaurant123}@postgres:5432/${POSTGRES_DB:-restaurant_db}
+    volumes:
+      - ./ml:/app/ml
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - restaurant_network
+    profiles:
+      - ml-training
+    command: python -m ml.pipelines.demand_forecasting
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  restaurant_network:
+    driver: bridge

@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== CSS Variables ===== */
+:root {
+  --color-primary: 59 130 246;
+  --color-background: 248 250 252;
+  --color-surface: 255 255 255;
+  --color-text: 15 23 42;
+  --color-border: 226 232 240;
+}
+
+.dark {
+  --color-background: 15 23 42;
+  --color-surface: 30 41 59;
+  --color-text: 248 250 252;
+  --color-border: 51 65 85;
+}
+
+/* ===== Base Styles ===== */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased;
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-500;
+}
+
+/* ===== Focus States ===== */
+*:focus-visible {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900;
+}
+
+/* ===== Components ===== */
+@layer components {
+  .card {
+    @apply bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+
+  .stat-card {
+    @apply card p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply btn px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200;
+  }
+
+  .btn-ghost {
+    @apply btn px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300;
+  }
+
+  .btn-success {
+    @apply btn px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm;
+  }
+
+  .btn-danger {
+    @apply btn px-4 py-2 bg-red-600 hover:bg-red-700 text-white shadow-sm;
+  }
+
+  .input {
+    @apply w-full px-4 py-2.5 rounded-lg text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-pending {
+    @apply bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400;
+  }
+
+  .badge-preparing {
+    @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400;
+  }
+
+  .badge-ready {
+    @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400;
+  }
+
+  .badge-completed {
+    @apply bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400;
+  }
+
+  .badge-served {
+    @apply bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400;
+  }
+
+  .badge-cancelled {
+    @apply bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400;
+  }
+
+  .table-container {
+    @apply overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700;
+  }
+
+  .table {
+    @apply w-full text-left;
+  }
+
+  .table thead {
+    @apply bg-slate-50 dark:bg-slate-800/50;
+  }
+
+  .table th {
+    @apply px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider;
+  }
+
+  .table td {
+    @apply px-4 py-3 text-sm text-slate-700 dark:text-slate-300 border-t border-slate-100 dark:border-slate-700/50;
+  }
+
+  .table tbody tr {
+    @apply hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors;
+  }
+
+  .menu-item-card {
+    @apply card p-4 cursor-pointer hover:ring-2 hover:ring-blue-500/50 hover:border-blue-500;
+  }
+
+  .skeleton {
+    @apply bg-slate-200 dark:bg-slate-700 rounded animate-pulse;
+  }
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.text-gradient {
+  @apply bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
