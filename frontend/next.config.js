@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
@@ -11,6 +13,22 @@ const nextConfig = {
   experimental: {
     // Optimize bundle - packages to tree-shake
     optimizePackageImports: ['lucide-react', 'recharts', '@tanstack/react-query'],
+  },
+
+  // Turbopack configuration for path aliases
+  turbopack: {
+    resolveAlias: {
+      '@/*': ['./src/*'],
+    },
+  },
+
+  // Webpack configuration for path aliases (fallback for non-Turbopack builds)
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, 'src'),
+    };
+    return config;
   },
 
   // Image optimization
