@@ -15,14 +15,14 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react', 'recharts', '@tanstack/react-query'],
   },
 
-  // Turbopack configuration for path aliases
+  // Turbopack configuration for path aliases (using absolute paths for Vercel)
   turbopack: {
     resolveAlias: {
-      '@/*': ['./src/*'],
+      '@': path.resolve(__dirname, 'src'),
     },
   },
 
-  // Webpack configuration for path aliases (fallback for non-Turbopack builds)
+  // Webpack configuration for path aliases
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
