@@ -41,28 +41,30 @@ $env:PYTHONPATH = "backend"
 Render offers a free tier for Web Services that is perfect for this project.
 
 ### Steps:
+
 1.  **Create a Render Account** at [render.com](https://render.com).
 2.  **New +** -> **Web Service**.
 3.  **Connect GitHub** and select your repository.
 4.  **Configuration**:
-    *   **Name**: `restaurant-api` (or similar)
-    *   **Region**: Choose closest to you (e.g., Oregon, Frankfurt)
-    *   **Branch**: `main`
-    *   **Root Directory**: `.` (Leave empty)
-    *   **Runtime**: `Python 3`
-    *   **Build Command**: `pip install -r requirements.txt`
-    *   **Start Command**: `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`
-    *   **Instance Type**: `Free`
+    - **Name**: `restaurant-api` (or similar)
+    - **Region**: Choose closest to you (e.g., Oregon, Frankfurt)
+    - **Branch**: `main`
+    - **Root Directory**: `.` (Leave empty)
+    - **Runtime**: `Python 3`
+    - **Build Command**: `pip install -r requirements.txt`
+    - **Start Command**: `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`
+    - **Instance Type**: `Free`
 5.  **Environment Variables** (Advanced):
-    *   Add all variables from `backend/.env`:
-        *   `DATABASE_URL`: Your Supabase connection string.
-        *   `SECRET_KEY`: A random secure string.
-        *   `GROQ_API_KEY`: Your Groq API key.
-        *   `CORS_ORIGINS_STR`: `https://your-frontend.vercel.app,http://localhost:3000`
-        *   `ENVIRONMENT`: `production`
-        *   `PYTHON_VERSION`: `3.11.9` (Optional, but recommended)
+    - Add all variables from `backend/.env`:
+      - `DATABASE_URL`: Your Supabase connection string.
+      - `SECRET_KEY`: A random secure string.
+      - `GROQ_API_KEY`: Your Groq API key.
+      - `CORS_ORIGINS_STR`: `https://your-frontend.vercel.app,http://localhost:3000`
+      - `ENVIRONMENT`: `production`
+      - `PYTHON_VERSION`: `3.11.9` (Optional, but recommended)
 
 ### Note on Free Tier
+
 Render's free tier spins down after 15 minutes of inactivity. The first request might take 30-60 seconds to load. For a production app, consider upgrading to the Starter plan ($7/mo).
 
 ## 3. Frontend Hosting (Vercel or Railway)
