@@ -7,7 +7,7 @@
 # Core ML (CPU Optimized)
 # ============================================
 # Explicitly request CPU version of torch to save space (2GB+ savings)
-torch>=2.2.0+cpu
+torch==2.2.0+cpu
 sentence-transformers>=2.6.0
 
 # ============================================
