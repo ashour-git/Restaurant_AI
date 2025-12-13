@@ -22,7 +22,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 config = context.config
 
 # Override sqlalchemy.url with application setting
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Escape % for ConfigParser interpolation
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
 
 # Configure logging
 if config.config_file_name is not None:
