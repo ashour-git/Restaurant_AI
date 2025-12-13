@@ -213,17 +213,20 @@ This project is optimized for deploying the **frontend on Vercel** and the **bac
 1. **Create a Render Account**: Go to [render.com](https://render.com)
 
 2. **New Web Service**:
+
    - Connect your GitHub repository
    - Select "Web Service"
    - Choose Python as the environment
 
 3. **Configure Build Settings**:
+
    ```
    Build Command: pip install -r requirements.txt
    Start Command: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
    ```
 
 4. **Set Environment Variables**:
+
    ```
    SECRET_KEY=<generate-with-secrets.token_urlsafe(32)>
    ENVIRONMENT=production
@@ -233,6 +236,7 @@ This project is optimized for deploying the **frontend on Vercel** and the **bac
    ```
 
 5. **Add PostgreSQL** (optional but recommended):
+
    - Create a PostgreSQL database in Render
    - Copy the Internal Database URL to `DATABASE_URL`
 
@@ -245,11 +249,13 @@ This project is optimized for deploying the **frontend on Vercel** and the **bac
 1. **Create a Vercel Account**: Go to [vercel.com](https://vercel.com)
 
 2. **Import Project**:
+
    - Click "New Project"
    - Import from GitHub
    - Select your repository
 
 3. **Configure Project**:
+
    ```
    Framework Preset: Next.js
    Root Directory: frontend
@@ -258,6 +264,7 @@ This project is optimized for deploying the **frontend on Vercel** and the **bac
    ```
 
 4. **Set Environment Variables**:
+
    ```
    NEXT_PUBLIC_API_URL=https://your-backend.onrender.com/api/v1
    ```
@@ -280,14 +287,17 @@ This project is optimized for deploying the **frontend on Vercel** and the **bac
 1. **Create a Railway Account**: Go to [railway.app](https://railway.app)
 
 2. **New Project from GitHub**:
+
    - Connect repository
    - Railway auto-detects Python
 
 3. **Add PostgreSQL**:
+
    - Click "New" → "Database" → "PostgreSQL"
    - Railway provides `DATABASE_URL` automatically
 
 4. **Set Variables**:
+
    ```
    SECRET_KEY=<your-secret-key>
    ENVIRONMENT=production

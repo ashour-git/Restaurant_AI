@@ -23,15 +23,5 @@ services:
       - key: GROQ_API_KEY
         sync: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: restaurant-db
-          property: connectionString
+        sync: false
     autoDeploy: true
-
-databases:
-  - name: restaurant-db
-    databaseName: restaurant
-    user: restaurant_user
-    region: oregon
-    plan: starter
-    postgresMajorVersion: 15
