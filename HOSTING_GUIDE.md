@@ -58,25 +58,25 @@ Railway is the recommended platform for hosting the FastAPI backend.
     - The build should pass using the optimized CPU-only dependencies.
 
 ## 3. Frontend Hosting (Vercel)
-      - `GROQ_API_KEY`: Your Groq API key.
-      - `CORS_ORIGINS_STR`: `https://your-frontend.vercel.app,http://localhost:3000`
-      - `ENVIRONMENT`: `production`
-      - `PYTHON_VERSION`: `3.11.9` (Optional, but recommended)
-
-### Note on Free Tier
-
-Render's free tier spins down after 15 minutes of inactivity. The first request might take 30-60 seconds to load. For a production app, consider upgrading to the Starter plan ($7/mo).
-
-## 3. Frontend Hosting (Vercel or Railway)
 
 Vercel is recommended for Next.js.
 
-### Vercel (Recommended)
+### Steps:
+1.  **Import the project** in Vercel.
+2.  Set **Root Directory** to `frontend`.
+3.  **Environment Variables**:
+    *   `NEXT_PUBLIC_API_URL`: `https://zpyxawwi.up.railway.app/api/v1` (This is your Railway Backend URL).
+    *   `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase URL.
+    *   `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase Anon Key.
+    *   `NEXT_PUBLIC_FIREBASE_...`: Add all your Firebase keys.
+4.  **Deploy**.
 
-1. Import the project in Vercel.
-2. Set **Root Directory** to `frontend`.
-3. Add Environment Variables from `frontend/.env.local`:
-   - `NEXT_PUBLIC_API_URL`: Your deployed Railway Backend URL (e.g., `https://smart-restaurant-production.up.railway.app/api/v1`).
+## 4. Final Connection Step
+1.  Copy your Vercel URL (e.g., `https://restaurant-ai-omega.vercel.app`).
+2.  Go to **Railway** -> **Variables**.
+3.  Update `CORS_ORIGINS_STR` to include your Vercel URL.
+    *   Example: `http://localhost:3000,https://restaurant-ai-omega.vercel.app`
+4.  Redeploy Railway.
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 4. Deploy.
