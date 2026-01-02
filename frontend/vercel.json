@@ -5,12 +5,6 @@
   "installCommand": "npm install",
   "devCommand": "npm run dev",
   "outputDirectory": ".next",
-  "regions": ["iad1"],
-  "functions": {
-    "src/app/**/*.tsx": {
-      "maxDuration": 30
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
@@ -50,12 +44,6 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "${NEXT_PUBLIC_API_URL}/:path*"
     }
   ]
 }
