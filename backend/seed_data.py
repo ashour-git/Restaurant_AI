@@ -24,6 +24,7 @@ from app.models.models import (
     PaymentMethod,
     PaymentStatus,
     Subcategory,
+)
 
 
 async def seed_database():
