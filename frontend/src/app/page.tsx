@@ -37,12 +37,12 @@ function StatCard({ title, value, change, icon: Icon, isLoading }: StatCardProps
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+        <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">{title}</CardTitle>
+        <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+      <CardContent className="pt-0">
+        <div className="text-lg sm:text-2xl font-bold">{value}</div>
         {change !== undefined && (
           <p className="text-xs text-muted-foreground">
             <span
@@ -54,7 +54,7 @@ function StatCard({ title, value, change, icon: Icon, isLoading }: StatCardProps
               {change >= 0 ? '+' : ''}
               {change}%
             </span>{' '}
-            vs last week
+            <span className="hidden sm:inline">vs last week</span>
           </p>
         )}
       </CardContent>
@@ -124,12 +124,12 @@ export default function DashboardPage() {
   const topItems = menuItems?.slice(0, 5) || [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 sm:space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Welcome back! Here&apos;s what&apos;s happening at your restaurant.
           </p>
         </div>
@@ -138,24 +138,25 @@ export default function DashboardPage() {
           variant="outline"
           size="sm"
           isLoading={isLoading}
+          className="self-start sm:self-auto"
         >
           <RefreshCw
             className={clsx('h-4 w-4', isLoading && 'animate-spin')}
           />
-          <span className="ml-2">Refresh</span>
+          <span className="ml-2 hidden xs:inline">Refresh</span>
         </Button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <StatCard key={stat.title} {...stat} isLoading={isLoading} />
         ))}
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+      <div className="grid gap-4 lg:grid-cols-7">
+        <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Recent Orders</CardTitle>
           </CardHeader>
@@ -216,7 +217,7 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
-        <Card className="col-span-3">
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Top Menu Items</CardTitle>
           </CardHeader>

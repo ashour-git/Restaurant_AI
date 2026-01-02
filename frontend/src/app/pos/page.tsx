@@ -127,16 +127,16 @@ export default function POSPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-6">
+    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-8rem)] gap-4 lg:gap-6">
       {/* Menu Items */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
               Point of Sale
             </h1>
-            <p className="text-slate-500">
+            <p className="text-sm text-slate-500">
               {menuItems?.length || 0} items available
             </p>
           </div>
@@ -147,7 +147,7 @@ export default function POSPage() {
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
               placeholder="--"
-              className="w-16 px-2 py-1 text-center border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-16 px-2 py-1 text-center border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700"
             />
           </div>
         </div>
@@ -171,35 +171,35 @@ export default function POSPage() {
         </div>
 
         {/* Menu Grid */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto lg:max-h-none max-h-[50vh]">
           {menuLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 animate-pulse">
-                  <div className="h-24 bg-slate-200 dark:bg-slate-700 rounded-lg mb-3" />
+                <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700 animate-pulse">
+                  <div className="h-16 sm:h-24 bg-slate-200 dark:bg-slate-700 rounded-lg mb-2 sm:mb-3" />
                   <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2" />
                   <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
                 </div>
               ))}
             </div>
           ) : filteredItems.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {filteredItems.map((item: any) => (
                 <button
                   key={item.id}
                   onClick={() => addToCart(item)}
-                  className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-left hover:shadow-md hover:border-blue-300 transition-all group"
+                  className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700 text-left hover:shadow-md hover:border-blue-300 transition-all group"
                 >
-                  <div className="h-24 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 rounded-lg mb-3 flex items-center justify-center group-hover:from-blue-50 group-hover:to-blue-100 transition-colors">
-                    <UtensilsCrossed className="h-8 w-8 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                  <div className="h-16 sm:h-24 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 rounded-lg mb-2 sm:mb-3 flex items-center justify-center group-hover:from-blue-50 group-hover:to-blue-100 transition-colors">
+                    <UtensilsCrossed className="h-6 w-6 sm:h-8 sm:w-8 text-slate-400 group-hover:text-blue-500 transition-colors" />
                   </div>
-                  <h3 className="font-medium text-slate-900 dark:text-white truncate">
+                  <h3 className="font-medium text-sm sm:text-base text-slate-900 dark:text-white truncate">
                     {item.name}
                   </h3>
-                  <p className="text-sm text-slate-500 truncate mb-1">
+                  <p className="text-xs sm:text-sm text-slate-500 truncate mb-1 hidden sm:block">
                     {item.description || 'Delicious menu item'}
                   </p>
-                  <p className="text-lg font-bold text-blue-600">
+                  <p className="text-base sm:text-lg font-bold text-blue-600">
                     ${Number(item.price).toFixed(2)}
                   </p>
                 </button>
@@ -216,13 +216,16 @@ export default function POSPage() {
       </div>
 
       {/* Cart */}
-      <div className="w-96 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col shadow-sm">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+      <div className="w-full lg:w-96 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col shadow-sm mt-4 lg:mt-0 max-h-[60vh] lg:max-h-none">
+        <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-slate-500" />
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-slate-500" />
+            <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">
               Current Order
             </h2>
+            <span className="lg:hidden text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+              {cart.length}
+            </span>
           </div>
           {cart.length > 0 && (
             <button

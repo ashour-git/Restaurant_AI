@@ -131,30 +131,30 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
             Menu Management
           </h1>
-          <p className="text-slate-500">
+          <p className="text-sm text-slate-500">
             {menuItems?.length || 0} items in your menu
           </p>
         </div>
         <button
           onClick={openCreateModal}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors self-start sm:self-auto"
         >
           <Plus className="h-5 w-5" />
-          Add Item
+          <span className="sm:inline">Add Item</span>
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4">
         {/* Search */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
           <input
             type="text"
@@ -166,13 +166,13 @@ export default function MenuPage() {
         </div>
 
         {/* Categories */}
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 sm:mx-0 sm:px-0">
           {allCategories.map((category) => (
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
               className={clsx(
-                'px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
+                'px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-colors',
                 activeCategory === category
                   ? 'bg-blue-600 text-white'
                   : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
@@ -186,17 +186,17 @@ export default function MenuPage() {
 
       {/* Menu Items Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 animate-pulse">
-              <div className="h-32 bg-slate-200 dark:bg-slate-700 rounded-lg mb-3" />
-              <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2" />
-              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+            <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700 animate-pulse">
+              <div className="h-20 sm:h-32 bg-slate-200 dark:bg-slate-700 rounded-lg mb-2 sm:mb-3" />
+              <div className="h-4 sm:h-5 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2" />
+              <div className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
             </div>
           ))}
         </div>
       ) : filteredItems.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {filteredItems.map((item: any) => (
             <div
               key={item.id}

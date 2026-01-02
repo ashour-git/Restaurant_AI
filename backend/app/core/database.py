@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
-from sqlalchemy.orm import DeclarativeBase
 
 # Naming convention for constraints (important for Alembic migrations)
 convention = {

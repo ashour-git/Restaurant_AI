@@ -279,7 +279,7 @@ Supplier: {row.get('supplier_id', 'N/A')}
         if low_stock.empty:
             return "All inventory items are well-stocked."
 
-        alerts = [f"⚠️ Low Stock Alerts ({len(low_stock)} items):"]
+        alerts = [f"Low Stock Alerts ({len(low_stock)} items):"]
         for _, row in low_stock.head(5).iterrows():
             alerts.append(
                 f"  - {row['ingredient_name']}: {row['quantity_on_hand']} "
@@ -609,7 +609,7 @@ def create_assistant(api_key: str | None = None) -> RestaurantAssistant:
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("🍽️  Smart Restaurant AI Assistant")
+    print("  Smart Restaurant AI Assistant")
     print("=" * 60)
     print("Powered by Groq (Llama 3.3 70B)")
     print("Type 'quit' to exit, 'clear' to reset conversation\n")
@@ -618,13 +618,13 @@ if __name__ == "__main__":
 
     while True:
         try:
-            user_input = input("\n👤 You: ").strip()
+            user_input = input("\nYou: ").strip()
 
             if not user_input:
                 continue
 
             if user_input.lower() == "quit":
-                print("\nGoodbye! 👋")
+                print("\nGoodbye!")
                 break
 
             if user_input.lower() == "clear":
@@ -633,8 +633,8 @@ if __name__ == "__main__":
                 continue
 
             response = assistant.chat(user_input)
-            print(f"\n🤖 Assistant: {response}")
+            print(f"\nAssistant: {response}")
 
         except KeyboardInterrupt:
-            print("\n\nGoodbye! 👋")
+            print("\n\nGoodbye!")
             break

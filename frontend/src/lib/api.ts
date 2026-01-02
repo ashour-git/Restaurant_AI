@@ -122,6 +122,26 @@ export function invalidateCache(pattern?: string): void {
   }
 }
 
+// Auth API
+export const authApi = {
+  login: (email: string, password: string) => {
+    const formData = new URLSearchParams();
+    formData.append('username', email);
+    formData.append('password', password);
+    return api.post('/auth/login', formData, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+  },
+  register: (data: { email: string; password: string; first_name: string; last_name: string }) =>
+    api.post('/auth/register', data),
+  me: () => api.get('/auth/me'),
+  refresh: () => api.post('/auth/refresh'),
+  logout: () => {
+    localStorage.removeItem('auth_token');
+    invalidateCache();
+  },
+};
+
 // Menu API
 export const menuApi = {
   getCategories: () => api.get('/menu/categories'),

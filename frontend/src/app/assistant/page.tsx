@@ -24,27 +24,27 @@ const ChatMessage = memo(function ChatMessage({
   return (
     <div
       className={clsx(
-        'flex items-start gap-3',
+        'flex items-start gap-2 sm:gap-3',
         message.role === 'user' ? 'flex-row-reverse' : ''
       )}
     >
       <div
         className={clsx(
-          'h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm',
+          'h-7 w-7 sm:h-9 sm:w-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm',
           message.role === 'user'
             ? 'bg-blue-500'
             : 'bg-gradient-to-br from-purple-500 to-blue-500'
         )}
       >
         {message.role === 'user' ? (
-          <User className="h-5 w-5 text-white" />
+          <User className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
         ) : (
-          <Bot className="h-5 w-5 text-white" />
+          <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
         )}
       </div>
       <div
         className={clsx(
-          'max-w-[75%] rounded-2xl px-4 py-3 shadow-sm',
+          'max-w-[80%] sm:max-w-[75%] rounded-2xl px-3 sm:px-4 py-2 sm:py-3 shadow-sm',
           message.role === 'user'
             ? 'bg-blue-500 text-white'
             : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
@@ -53,7 +53,7 @@ const ChatMessage = memo(function ChatMessage({
         <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
         <p
           className={clsx(
-            'text-xs mt-2',
+            'text-xs mt-1 sm:mt-2',
             message.role === 'user' ? 'text-blue-200' : 'text-slate-400'
           )}
         >
@@ -192,22 +192,22 @@ export default function AssistantPage() {
   }, [sendMessage]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-[calc(100vh-7rem)] sm:h-[calc(100vh-8rem)]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 sm:mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-purple-500" />
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-purple-500" />
             AI Assistant
           </h1>
-          <p className="text-slate-500">
+          <p className="text-sm text-slate-500">
             Ask me anything about the menu, recommendations, or operations
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Connection Status */}
           <div className={clsx(
-            'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium',
+            'flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium',
             isConnected === null && 'bg-slate-100 text-slate-600',
             isConnected === true && 'bg-green-100 text-green-700',
             isConnected === false && 'bg-red-100 text-red-700'
@@ -218,17 +218,19 @@ export default function AssistantPage() {
               isConnected === true && 'bg-green-500',
               isConnected === false && 'bg-red-500'
             )} />
-            {isConnected === null && 'Connecting...'}
-            {isConnected === true && 'AI Connected'}
-            {isConnected === false && 'AI Offline'}
+            <span className="hidden sm:inline">
+              {isConnected === null && 'Connecting...'}
+              {isConnected === true && 'AI Connected'}
+              {isConnected === false && 'AI Offline'}
+            </span>
           </div>
 
           <button
             onClick={resetConversation}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
           >
             <RefreshCw className="h-4 w-4" />
-            <span>New Chat</span>
+            <span className="hidden sm:inline">New Chat</span>
           </button>
         </div>
       </div>

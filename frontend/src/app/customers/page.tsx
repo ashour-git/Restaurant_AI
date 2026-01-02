@@ -30,41 +30,41 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Users className="h-7 w-7 text-purple-500" />
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Users className="h-5 w-5 sm:h-7 sm:w-7 text-purple-500" />
             Customers
           </h1>
-          <p className="text-slate-500">
+          <p className="text-sm text-slate-500">
             {customers?.length || 0} customers in your database
           </p>
         </div>
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md">
+      <div className="relative w-full sm:max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search customers by name, email, or phone..."
+          placeholder="Search customers..."
           className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Customer List */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden max-h-[50vh] lg:max-h-none overflow-y-auto">
           {isLoading ? (
-            <div className="p-8">
+            <div className="p-4 sm:p-8">
               <div className="animate-pulse space-y-4">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <div className="h-12 w-12 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                  <div key={i} className="flex items-center gap-3 sm:gap-4">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 bg-slate-200 dark:bg-slate-700 rounded-full" />
                     <div className="flex-1 space-y-2">
                       <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
                       <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/4" />
@@ -80,22 +80,22 @@ export default function CustomersPage() {
                   key={customer.id}
                   onClick={() => setSelectedCustomerId(customer.id)}
                   className={clsx(
-                    'w-full flex items-center gap-4 p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors',
+                    'w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors',
                     selectedCustomerId === customer.id && 'bg-blue-50 dark:bg-blue-900/20'
                   )}
                 >
-                  <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
                     {customer.name?.charAt(0) || 'C'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-900 dark:text-white truncate">
+                    <p className="font-medium text-sm sm:text-base text-slate-900 dark:text-white truncate">
                       {customer.name || 'Unknown Customer'}
                     </p>
-                    <p className="text-sm text-slate-500 truncate">
+                    <p className="text-xs sm:text-sm text-slate-500 truncate">
                       {customer.email || customer.phone || 'No contact info'}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right hidden sm:block">
                     <p className="font-medium text-slate-900 dark:text-white">
                       ${Number(customer.total_spent || 0).toFixed(2)}
                     </p>
@@ -116,35 +116,35 @@ export default function CustomersPage() {
         </div>
 
         {/* Customer Detail */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
           {selectedCustomer ? (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Profile */}
               <div className="text-center">
-                <div className="h-20 w-20 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold mx-auto mb-3 sm:mb-4">
                   {selectedCustomer.name?.charAt(0) || 'C'}
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                <h3 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white">
                   {selectedCustomer.name || 'Unknown Customer'}
                 </h3>
-                <p className="text-sm text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500">
                   Customer since {formatDate(selectedCustomer.created_at)}
                 </p>
               </div>
 
               {/* Contact Info */}
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {selectedCustomer.email && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Mail className="h-4 w-4 text-slate-400" />
-                    <span className="text-slate-600 dark:text-slate-300">
+                  <div className="flex items-center gap-2 sm:gap-3 text-sm">
+                    <Mail className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                    <span className="text-slate-600 dark:text-slate-300 truncate">
                       {selectedCustomer.email}
                     </span>
                   </div>
                 )}
                 {selectedCustomer.phone && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Phone className="h-4 w-4 text-slate-400" />
+                  <div className="flex items-center gap-2 sm:gap-3 text-sm">
+                    <Phone className="h-4 w-4 text-slate-400 flex-shrink-0" />
                     <span className="text-slate-600 dark:text-slate-300">
                       {selectedCustomer.phone}
                     </span>
@@ -153,17 +153,17 @@ export default function CustomersPage() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
-                  <ShoppingCart className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 sm:p-4 text-center">
+                  <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500 mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                     {selectedCustomer.order_count || 0}
                   </p>
                   <p className="text-xs text-slate-500">Total Orders</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
-                  <DollarSign className="h-6 w-6 text-green-500 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 sm:p-4 text-center">
+                  <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-green-500 mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                     ${Number(selectedCustomer.total_spent || 0).toFixed(0)}
                   </p>
                   <p className="text-xs text-slate-500">Total Spent</p>

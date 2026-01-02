@@ -32,7 +32,11 @@ from app.api.routes import api_router
 from app.api.routes.ml import initialize_all_models
 from app.api.routes.ml import router as ml_router
 from app.core.config import settings
-from starlette.middleware.base import BaseHTTPMiddleware
+from app.core.middleware import (
+    RateLimitMiddleware,
+    RequestIdMiddleware,
+    SecurityHeadersMiddleware,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -103,6 +107,15 @@ def create_application() -> FastAPI:
 
     # Add GZip compression for responses > 500 bytes
     app.add_middleware(GZipMiddleware, minimum_size=500)
+
+    # Add security headers
+    app.add_middleware(SecurityHeadersMiddleware)
+
+    # Add request ID for tracing
+    app.add_middleware(RequestIdMiddleware)
+
+    # Add rate limiting (100 requests per minute)
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=100)
 
     # Add timing middleware for performance monitoring
     app.add_middleware(TimingMiddleware)

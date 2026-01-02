@@ -394,21 +394,21 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Settings className="h-7 w-7 text-slate-500" />
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Settings className="h-5 w-5 sm:h-7 sm:w-7 text-slate-500" />
             Settings
           </h1>
-          <p className="text-slate-500">Manage your restaurant configuration</p>
+          <p className="text-sm text-slate-500">Manage your restaurant configuration</p>
         </div>
         <button
           onClick={handleSave}
           disabled={isSaving}
           className={clsx(
-            'flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg transition-colors',
+            'flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg transition-colors self-start sm:self-auto',
             isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'
           )}
         >
@@ -417,30 +417,30 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-          <nav className="space-y-1">
+      <div className="flex flex-col lg:grid lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* Sidebar - Horizontal scroll on mobile */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 sm:p-4 lg:order-1 order-1">
+          <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-1 px-1 lg:mx-0 lg:px-0">
             {settingSections.map((section) => (
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
                 className={clsx(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors',
+                  'flex items-center gap-2 sm:gap-3 px-3 py-2 sm:py-2.5 rounded-lg text-left transition-colors whitespace-nowrap lg:whitespace-normal lg:w-full',
                   activeSection === section.id
                     ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
                 )}
               >
-                {section.icon}
-                <span className="font-medium">{section.label}</span>
+                <span className="flex-shrink-0">{section.icon}</span>
+                <span className="font-medium text-sm sm:text-base">{section.label}</span>
               </button>
             ))}
           </nav>
         </div>
 
         {/* Content */}
-        <div className="lg:col-span-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className="lg:col-span-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6 lg:order-2 order-2">
           {renderContent()}
         </div>
       </div>

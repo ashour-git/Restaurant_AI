@@ -7,7 +7,7 @@
 
 A production-ready AI-powered Restaurant Management SaaS platform built with FastAPI, Next.js, and Machine Learning.
 
-## 🌟 Features
+## Features
 
 ### Core Features
 
@@ -31,7 +31,7 @@ A production-ready AI-powered Restaurant Management SaaS platform built with Fas
 - **Password Hashing**: BCrypt password hashing
 - **Protected API Routes**: Secure endpoints with proper authorization
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -100,7 +100,7 @@ The frontend will be available at:
 
 - **App**: http://localhost:3000
 
-## 🔐 Authentication
+## Authentication
 
 ### Register a New User
 
@@ -124,7 +124,7 @@ curl http://localhost:5000/api/v1/auth/me \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
-## 📦 Deployment
+## Deployment
 
 For detailed deployment instructions, see **[DEPLOYMENT.md](DEPLOYMENT.md)** which covers:
 
@@ -134,7 +134,7 @@ For detailed deployment instructions, see **[DEPLOYMENT.md](DEPLOYMENT.md)** whi
 - Environment configuration
 - Troubleshooting guide
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 Restaurant_AI/
@@ -188,7 +188,7 @@ uvicorn app.main:app --reload
    python data/generate_datasets.py
    ```
 
-## 📊 API Endpoints
+## API Endpoints
 
 ### Menu
 
@@ -216,7 +216,7 @@ uvicorn app.main:app --reload
 - `POST /api/v1/ml/chat` - AI assistant chat
 - `GET /api/v1/ml/menu-search` - Semantic menu search
 
-## 🤖 ML Pipelines
+## ML Pipelines
 
 ### Demand Forecasting
 
@@ -239,7 +239,7 @@ Combines two approaches:
 - **Claude Integration**: Natural language understanding
 - **Knowledge Base**: Menu items, policies, operational data
 
-## 🔧 Configuration
+## Configuration
 
 Key environment variables:
 
@@ -259,7 +259,7 @@ JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
 
-## 📈 Data Schema
+## Data Schema
 
 ### Core Tables
 
@@ -274,7 +274,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 - `demand_forecasts` - Predicted demand
 - `menu_item_embeddings` - Vector embeddings (pgvector)
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -287,7 +287,7 @@ pytest --cov=app --cov-report=html
 pytest tests/test_orders.py
 ```
 
-## 📦 Deployment
+## Deployment
 
 ### Production Docker Build
 
@@ -304,7 +304,7 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 - [ ] Configure CORS origins
 - [ ] Set up monitoring (Prometheus/Grafana)
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 **Backend**
 
@@ -337,11 +337,11 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 - Docker & Docker Compose
 - GitHub Actions (CI/CD)
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -350,7 +350,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-Built with ❤️ for the restaurant industry
+Built for the restaurant industry
 #   R e s t a u r a n t _ A I 
  
  

@@ -64,31 +64,31 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <ChefHat className="h-7 w-7 text-orange-500" />
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <ChefHat className="h-5 w-5 sm:h-7 sm:w-7 text-orange-500" />
             Orders
           </h1>
-          <p className="text-slate-500">
+          <p className="text-sm text-slate-500">
             Manage and track all restaurant orders
           </p>
         </div>
         <button
           onClick={() => refetch()}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 self-start sm:self-auto"
         >
           <RefreshCw className={clsx('h-4 w-4', isLoading && 'animate-spin')} />
-          Refresh
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4">
         {/* Search */}
-        <div className="relative flex-1 max-w-xs">
+        <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
           <input
             type="text"
@@ -100,13 +100,13 @@ export default function OrdersPage() {
         </div>
 
         {/* Status Filter */}
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 sm:mx-0 sm:px-0">
           {ORDER_STATUSES.map((status) => (
             <button
               key={status.value}
               onClick={() => setStatusFilter(status.value)}
               className={clsx(
-                'px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
+                'px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-colors',
                 statusFilter === status.value
                   ? 'bg-blue-600 text-white'
                   : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50'
@@ -118,8 +118,58 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      {/* Orders - Mobile Card View */}
+      <div className="block sm:hidden space-y-3">
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 animate-pulse">
+                <div className="flex justify-between mb-3">
+                  <div className="h-5 w-16 bg-slate-200 dark:bg-slate-700 rounded" />
+                  <div className="h-5 w-20 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                </div>
+                <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-2" />
+                <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : filteredOrders.length > 0 ? (
+          filteredOrders.map((order: any) => (
+            <div
+              key={order.id}
+              onClick={() => setSelectedOrder(order)}
+              className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 active:bg-slate-50 dark:active:bg-slate-700 cursor-pointer"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  #{order.id}
+                </span>
+                <OrderStatusBadge status={order.status || 'pending'} />
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600 dark:text-slate-400">
+                  {order.table_number ? `Table ${order.table_number}` : 'Takeaway'}
+                </span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  ${Number(order.total || 0).toFixed(2)}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-slate-500 mt-2">
+                <Clock className="h-3 w-3" />
+                {formatTime(order.created_at)} - {order.items?.length || 0} items
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-12 text-slate-500">
+            <ChefHat className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>No orders found</p>
+          </div>
+        )}
+      </div>
+
+      {/* Orders Table - Desktop */}
+      <div className="hidden sm:block bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         {isLoading ? (
           <div className="p-8">
             <div className="animate-pulse space-y-4">
@@ -134,6 +184,7 @@ export default function OrdersPage() {
             </div>
           </div>
         ) : filteredOrders.length > 0 ? (
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50 dark:bg-slate-900/50">
               <tr>
@@ -143,7 +194,7 @@ export default function OrdersPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Table / Customer
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider hidden md:table-cell">
                   Items
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -152,7 +203,7 @@ export default function OrdersPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider hidden lg:table-cell">
                   Time
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -178,7 +229,7 @@ export default function OrdersPage() {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400 hidden md:table-cell">
                     {order.items?.length || 0} items
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
@@ -189,7 +240,7 @@ export default function OrdersPage() {
                   <td className="px-4 py-4 whitespace-nowrap">
                     <OrderStatusBadge status={order.status || 'pending'} />
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap hidden lg:table-cell">
                     <div className="flex items-center gap-1 text-sm text-slate-500">
                       <Clock className="h-4 w-4" />
                       {formatTime(order.created_at)}
@@ -207,6 +258,7 @@ export default function OrdersPage() {
               ))}
             </tbody>
           </table>
+          </div>
         ) : (
           <div className="text-center py-12 text-slate-500">
             <ChefHat className="h-12 w-12 mx-auto mb-3 opacity-50" />

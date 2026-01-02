@@ -95,25 +95,25 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <BarChart2 className="h-7 w-7 text-blue-500" />
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <BarChart2 className="h-5 w-5 sm:h-7 sm:w-7 text-blue-500" />
             Analytics
           </h1>
-          <p className="text-slate-500">Track your restaurant performance</p>
+          <p className="text-sm text-slate-500">Track your restaurant performance</p>
         </div>
 
         {/* Time Range Selector */}
-        <div className="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+        <div className="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1 self-start sm:self-auto">
           {(['today', 'week', 'month'] as const).map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range)}
               className={clsx(
-                'px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                'px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors',
                 timeRange === range
                   ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow'
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
@@ -126,46 +126,46 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {stats.map((stat) => (
           <div
             key={stat.title}
-            className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5"
+            className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 sm:p-5"
           >
             <div className="flex items-start justify-between">
-              <div className={clsx('h-12 w-12 rounded-lg flex items-center justify-center', stat.bg)}>
-                <stat.icon className={clsx('h-6 w-6', stat.color)} />
+              <div className={clsx('h-8 w-8 sm:h-12 sm:w-12 rounded-lg flex items-center justify-center', stat.bg)}>
+                <stat.icon className={clsx('h-4 w-4 sm:h-6 sm:w-6', stat.color)} />
               </div>
               <div
                 className={clsx(
-                  'flex items-center gap-1 text-sm font-medium',
+                  'flex items-center gap-0.5 sm:gap-1 text-xs sm:text-sm font-medium',
                   stat.trend === 'up' ? 'text-green-500' : 'text-red-500'
                 )}
               >
                 {stat.trend === 'up' ? (
-                  <ArrowUp className="h-4 w-4" />
+                  <ArrowUp className="h-3 w-3 sm:h-4 sm:w-4" />
                 ) : (
-                  <ArrowDown className="h-4 w-4" />
+                  <ArrowDown className="h-3 w-3 sm:h-4 sm:w-4" />
                 )}
-                {stat.change}
+                <span className="hidden xs:inline">{stat.change}</span>
               </div>
             </div>
-            <div className="mt-4">
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
-              <p className="text-sm text-slate-500">{stat.title}</p>
+            <div className="mt-2 sm:mt-4">
+              <p className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
+              <p className="text-xs sm:text-sm text-slate-500 truncate">{stat.title}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Revenue Chart */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-3 sm:mb-4">
             Revenue Overview
           </h3>
-          <div className="h-80">
+          <div className="h-60 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueData}>
                 <defs>
@@ -175,8 +175,8 @@ export default function AnalyticsPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="day" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
+                <XAxis dataKey="day" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: '#1e293b',

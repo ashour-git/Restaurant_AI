@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: restaurant-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+    autoDeploy: true
+
+databases:
+  - name: restaurant-db
+    databaseName: restaurant
+    user: restaurant
+    plan: free
+
+  - name: restaurant-redis
+    type: redis
+    plan: free

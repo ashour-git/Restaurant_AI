@@ -204,7 +204,7 @@ docker build -f Dockerfile.ml -t restaurant-ml:latest .
 
 ## Production Deployment
 
-### 🚀 Vercel + Render/Railway Deployment (Recommended)
+### Vercel + Render/Railway Deployment (Recommended)
 
 This project is optimized for deploying the **frontend on Vercel** and the **backend on Render or Railway**.
 

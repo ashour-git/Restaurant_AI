@@ -1,13 +1,12 @@
+import AppLayout from '@/components/layout/AppLayout';
 import Providers from '@/components/Providers';
-import Header from '@/components/layout/Header';
-import Sidebar from '@/components/layout/Sidebar';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
 const inter = Inter({
   subsets: ['latin'],
-  display: 'swap', // Improve font loading performance
+  display: 'swap',
   preload: true,
 });
 
@@ -41,17 +40,11 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <Providers>
-          <div className="flex h-screen bg-slate-50 dark:bg-slate-900">
-            <Sidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <Header />
-              <main className="flex-1 overflow-y-auto p-6">
-                {children}
-              </main>
-            </div>
-          </div>
+          <AppLayout>{children}</AppLayout>
         </Providers>
       </body>
     </html>
+  );
+}
   );
 }

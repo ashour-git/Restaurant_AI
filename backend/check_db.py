@@ -12,7 +12,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 async def check_db():
     if not DATABASE_URL:
-        print("❌ DATABASE_URL not found in environment variables")
+        print("[ERROR] DATABASE_URL not found in environment variables")
         return
 
     print(
@@ -23,7 +23,7 @@ async def check_db():
         engine = create_async_engine(DATABASE_URL)
         async with engine.connect() as conn:
             result = await conn.execute(text("SELECT 1"))
-            print("✅ Database connection successful!")
+            print("[OK] Database connection successful!")
 
             # List tables
             # This query works for PostgreSQL
@@ -50,7 +50,7 @@ async def check_db():
         await engine.dispose()
 
     except Exception as e:
-        print(f"❌ Database connection failed: {e}")
+        print(f"[ERROR] Database connection failed: {e}")
 
 
 if __name__ == "__main__":
