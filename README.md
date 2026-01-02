@@ -2,7 +2,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.124+-green.svg)](https://fastapi.tiangolo.com/)
-[![Next.js 16](https://img.shields.io/badge/Next.js-16+-black.svg)](https://nextjs.org/)
+[![Next.js 15](https://img.shields.io/badge/Next.js-15+-black.svg)](https://nextjs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A production-ready AI-powered Restaurant Management SaaS platform built with FastAPI, Next.js, and Machine Learning.
