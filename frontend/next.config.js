@@ -38,12 +38,12 @@ const nextConfig = {
   },
 
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://restaurant-ai-ortjww.fly.dev/api/v1',
   },
 
   // API rewrites for development
   async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://restaurant-ai-ortjww.fly.dev/api/v1';
     return [
       {
         source: '/api/:path*',
