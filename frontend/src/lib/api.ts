@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
-// API URL configuration - defaults to relative path for production
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+// API URL configuration - uses Fly.io backend in production
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://restaurant-ai-ortjww.fly.dev/api/v1';
 
 // Check if we're in a browser environment
 const isBrowser = typeof window !== 'undefined';
@@ -185,11 +185,13 @@ export const inventoryApi = {
 // Analytics API
 export const analyticsApi = {
   getDashboard: () => api.get('/analytics/dashboard'),
+  getSalesSummary: (period?: string) =>
+    api.get('/analytics/sales/summary', { params: { period: period || 'week' } }),
   getSalesReport: (params: { start_date: string; end_date: string }) =>
-    api.get('/analytics/sales', { params }),
+    api.get('/analytics/sales/daily', { params }),
   getTopItems: (params?: { limit?: number }) =>
-    api.get('/analytics/top-items', { params }),
-  getHourlyDistribution: () => api.get('/analytics/hourly'),
+    api.get('/analytics/items/top-selling', { params }),
+  getItemsByCategory: () => api.get('/analytics/items/by-category'),
 };
 
 // ML API

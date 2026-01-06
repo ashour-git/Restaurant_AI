@@ -1,0 +1,59 @@
+# Fly.io Configuration for Restaurant AI Backend
+# See https://fly.io/docs/reference/configuration/ for details
+
+app = "restaurant-ai-ortjww"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile.backend"
+
+[env]
+  # Application settings
+  ENVIRONMENT = "production"
+  DEBUG = "false"
+  APP_NAME = "Smart Restaurant SaaS"
+  APP_VERSION = "1.0.0"
+  
+  # API settings
+  API_HOST = "0.0.0.0"
+  API_PORT = "8000"
+  
+  # CORS - Vercel frontend URL
+  CORS_ORIGINS_STR = "https://restaurant-ai-omega.vercel.app,https://restaurant-ai-ortjww.fly.dev,http://localhost:3000"
+  
+  # ML paths
+  ML_MODELS_PATH = "./ml/models"
+  EMBEDDINGS_PATH = "./ml/embeddings"
+  
+  # Disable Redis for now
+  REDIS_ENABLED = "false"
+  
+  # SQLite path (uses Fly volume for persistence)
+  DATABASE_URL = "sqlite+aiosqlite:////data/restaurant.db"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[mounts]
+  source = "restaurant_data"
+  destination = "/data"
+
+[[vm]]
+  memory = "2gb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[checks]
+  [checks.health]
+    grace_period = "60s"
+    interval = "30s"
+    method = "get"
+    path = "/health"
+    port = 8000
+    timeout = "10s"
+    type = "http"

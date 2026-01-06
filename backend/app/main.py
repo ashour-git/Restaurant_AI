@@ -69,6 +69,16 @@ async def lifespan(app: FastAPI):
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
 
+    # Initialize database tables
+    logger.info("Initializing database...")
+    try:
+        from app.core.database import Base, engine
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables created/verified successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+
     # Initialize ML models
     logger.info("Initializing ML models...")
     initialize_all_models(groq_api_key=os.environ.get("GROQ_API_KEY"))
