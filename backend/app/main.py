@@ -72,10 +72,13 @@ async def lifespan(app: FastAPI):
     # Initialize database tables
     logger.info("Initializing database...")
     try:
-        from app.core.database import Base, engine
+        from app.core.database import Base, engine, async_session_maker
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables created/verified successfully")
+        
+        # Auto-seed database if empty
+        await seed_initial_data(async_session_maker)
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
 
@@ -87,6 +90,91 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down application...")
+
+
+async def seed_initial_data(async_session_maker):
+    """Seed database with initial data if empty."""
+    from sqlalchemy import select
+    from app.models.models import Category, MenuItem, Subcategory
+    from decimal import Decimal
+    
+    async with async_session_maker() as session:
+        # Check if data exists
+        result = await session.execute(select(Category).limit(1))
+        if result.scalar():
+            logger.info("Database already has data, skipping seed")
+            return
+        
+        logger.info("Seeding database with initial menu data...")
+        
+        # Create categories and menu items
+        categories_data = [
+            {"name": "Appetizers", "description": "Start your meal right", "display_order": 1},
+            {"name": "Main Courses", "description": "Hearty main dishes", "display_order": 2},
+            {"name": "Desserts", "description": "Sweet endings", "display_order": 3},
+            {"name": "Beverages", "description": "Refreshing drinks", "display_order": 4},
+        ]
+        
+        categories = {}
+        for cat_data in categories_data:
+            category = Category(**cat_data)
+            session.add(category)
+            await session.flush()
+            categories[cat_data["name"]] = category
+            
+            # Add a default subcategory
+            subcategory = Subcategory(
+                name="General",
+                category_id=category.id,
+                display_order=1
+            )
+            session.add(subcategory)
+            await session.flush()
+            
+            # Add menu items
+            menu_items = get_menu_items_for_category(cat_data["name"], subcategory.id)
+            for item_data in menu_items:
+                item = MenuItem(**item_data)
+                session.add(item)
+        
+        await session.commit()
+        logger.info("Database seeded successfully with menu items!")
+
+
+def get_menu_items_for_category(category_name: str, subcategory_id: int) -> list:
+    """Get menu items for a category."""
+    from decimal import Decimal
+    
+    items = {
+        "Appetizers": [
+            {"name": "Caesar Salad", "description": "Fresh romaine lettuce with caesar dressing", "price": Decimal("12.99"), "cost": Decimal("4.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
+            {"name": "Soup of the Day", "description": "Chef's daily soup selection", "price": Decimal("8.99"), "cost": Decimal("2.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
+            {"name": "Chicken Wings", "description": "Crispy wings with your choice of sauce", "price": Decimal("14.99"), "cost": Decimal("5.00"), "subcategory_id": subcategory_id, "is_available": True},
+            {"name": "Mozzarella Sticks", "description": "Golden fried mozzarella with marinara", "price": Decimal("10.99"), "cost": Decimal("3.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
+        ],
+        "Main Courses": [
+            {"name": "Classic Burger", "description": "Angus beef patty with all the fixings", "price": Decimal("16.99"), "cost": Decimal("6.00"), "subcategory_id": subcategory_id, "is_available": True},
+            {"name": "Grilled Salmon", "description": "Atlantic salmon with lemon butter sauce", "price": Decimal("24.99"), "cost": Decimal("10.00"), "subcategory_id": subcategory_id, "is_available": True, "is_gluten_free": True},
+            {"name": "Ribeye Steak", "description": "12oz prime ribeye cooked to perfection", "price": Decimal("32.99"), "cost": Decimal("14.00"), "subcategory_id": subcategory_id, "is_available": True, "is_gluten_free": True},
+            {"name": "Pasta Carbonara", "description": "Creamy pasta with bacon and parmesan", "price": Decimal("18.99"), "cost": Decimal("5.50"), "subcategory_id": subcategory_id, "is_available": True},
+            {"name": "Veggie Burger", "description": "Plant-based patty with fresh vegetables", "price": Decimal("15.99"), "cost": Decimal("5.00"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True},
+            {"name": "Fish & Chips", "description": "Beer-battered cod with crispy fries", "price": Decimal("19.99"), "cost": Decimal("7.00"), "subcategory_id": subcategory_id, "is_available": True},
+        ],
+        "Desserts": [
+            {"name": "Chocolate Lava Cake", "description": "Warm chocolate cake with molten center", "price": Decimal("9.99"), "cost": Decimal("3.00"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
+            {"name": "New York Cheesecake", "description": "Classic creamy cheesecake", "price": Decimal("8.99"), "cost": Decimal("2.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
+            {"name": "Ice Cream Sundae", "description": "Three scoops with toppings", "price": Decimal("7.99"), "cost": Decimal("2.00"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_gluten_free": True},
+            {"name": "Apple Pie", "description": "Warm apple pie with vanilla ice cream", "price": Decimal("8.99"), "cost": Decimal("2.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
+        ],
+        "Beverages": [
+            {"name": "Fresh Lemonade", "description": "House-made lemonade", "price": Decimal("4.99"), "cost": Decimal("1.00"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
+            {"name": "Iced Tea", "description": "Freshly brewed iced tea", "price": Decimal("3.99"), "cost": Decimal("0.75"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
+            {"name": "Coffee", "description": "Premium roasted coffee", "price": Decimal("3.49"), "cost": Decimal("0.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
+            {"name": "Soft Drinks", "description": "Coca-Cola, Sprite, or Fanta", "price": Decimal("2.99"), "cost": Decimal("0.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
+            {"name": "Craft Beer", "description": "Selection of local craft beers", "price": Decimal("7.99"), "cost": Decimal("3.00"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
+        ],
+    }
+    return items.get(category_name, [])
 
 
 def create_application() -> FastAPI:
