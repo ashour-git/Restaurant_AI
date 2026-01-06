@@ -191,13 +191,6 @@ export function useTopItems(limit?: number) {
   });
 }
 
-export function useHourlyDistribution() {
-  return useQuery({
-    queryKey: ['hourlyDistribution'],
-    queryFn: () => analyticsApi.getHourlyDistribution().then((res) => res.data),
-  });
-}
-
 export function useAnalytics(params?: { period?: string }) {
   return useQuery({
     queryKey: ['analytics', params],
