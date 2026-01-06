@@ -144,34 +144,38 @@ async def seed_initial_data(async_session_maker):
 def get_menu_items_for_category(category_name: str, subcategory_id: int) -> list:
     """Get menu items for a category."""
     from decimal import Decimal
+    import uuid
+    
+    def make_sku(prefix: str) -> str:
+        return f"{prefix}-{uuid.uuid4().hex[:8].upper()}"
     
     items = {
         "Appetizers": [
-            {"name": "Caesar Salad", "description": "Fresh romaine lettuce with caesar dressing", "price": Decimal("12.99"), "cost": Decimal("4.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
-            {"name": "Soup of the Day", "description": "Chef's daily soup selection", "price": Decimal("8.99"), "cost": Decimal("2.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
-            {"name": "Chicken Wings", "description": "Crispy wings with your choice of sauce", "price": Decimal("14.99"), "cost": Decimal("5.00"), "subcategory_id": subcategory_id, "is_available": True},
-            {"name": "Mozzarella Sticks", "description": "Golden fried mozzarella with marinara", "price": Decimal("10.99"), "cost": Decimal("3.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
+            {"sku": make_sku("APP"), "name": "Caesar Salad", "description": "Fresh romaine lettuce with caesar dressing", "price": Decimal("12.99"), "cost": Decimal("4.50"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True},
+            {"sku": make_sku("APP"), "name": "Soup of the Day", "description": "Chef's daily soup selection", "price": Decimal("8.99"), "cost": Decimal("2.50"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True},
+            {"sku": make_sku("APP"), "name": "Chicken Wings", "description": "Crispy wings with your choice of sauce", "price": Decimal("14.99"), "cost": Decimal("5.00"), "subcategory_id": subcategory_id, "is_active": True},
+            {"sku": make_sku("APP"), "name": "Mozzarella Sticks", "description": "Golden fried mozzarella with marinara", "price": Decimal("10.99"), "cost": Decimal("3.50"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True},
         ],
         "Main Courses": [
-            {"name": "Classic Burger", "description": "Angus beef patty with all the fixings", "price": Decimal("16.99"), "cost": Decimal("6.00"), "subcategory_id": subcategory_id, "is_available": True},
-            {"name": "Grilled Salmon", "description": "Atlantic salmon with lemon butter sauce", "price": Decimal("24.99"), "cost": Decimal("10.00"), "subcategory_id": subcategory_id, "is_available": True, "is_gluten_free": True},
-            {"name": "Ribeye Steak", "description": "12oz prime ribeye cooked to perfection", "price": Decimal("32.99"), "cost": Decimal("14.00"), "subcategory_id": subcategory_id, "is_available": True, "is_gluten_free": True},
-            {"name": "Pasta Carbonara", "description": "Creamy pasta with bacon and parmesan", "price": Decimal("18.99"), "cost": Decimal("5.50"), "subcategory_id": subcategory_id, "is_available": True},
-            {"name": "Veggie Burger", "description": "Plant-based patty with fresh vegetables", "price": Decimal("15.99"), "cost": Decimal("5.00"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True},
-            {"name": "Fish & Chips", "description": "Beer-battered cod with crispy fries", "price": Decimal("19.99"), "cost": Decimal("7.00"), "subcategory_id": subcategory_id, "is_available": True},
+            {"sku": make_sku("MAIN"), "name": "Classic Burger", "description": "Angus beef patty with all the fixings", "price": Decimal("16.99"), "cost": Decimal("6.00"), "subcategory_id": subcategory_id, "is_active": True},
+            {"sku": make_sku("MAIN"), "name": "Grilled Salmon", "description": "Atlantic salmon with lemon butter sauce", "price": Decimal("24.99"), "cost": Decimal("10.00"), "subcategory_id": subcategory_id, "is_active": True, "is_gluten_free": True},
+            {"sku": make_sku("MAIN"), "name": "Ribeye Steak", "description": "12oz prime ribeye cooked to perfection", "price": Decimal("32.99"), "cost": Decimal("14.00"), "subcategory_id": subcategory_id, "is_active": True, "is_gluten_free": True},
+            {"sku": make_sku("MAIN"), "name": "Pasta Carbonara", "description": "Creamy pasta with bacon and parmesan", "price": Decimal("18.99"), "cost": Decimal("5.50"), "subcategory_id": subcategory_id, "is_active": True},
+            {"sku": make_sku("MAIN"), "name": "Veggie Burger", "description": "Plant-based patty with fresh vegetables", "price": Decimal("15.99"), "cost": Decimal("5.00"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True, "is_vegan": True},
+            {"sku": make_sku("MAIN"), "name": "Fish & Chips", "description": "Beer-battered cod with crispy fries", "price": Decimal("19.99"), "cost": Decimal("7.00"), "subcategory_id": subcategory_id, "is_active": True},
         ],
         "Desserts": [
-            {"name": "Chocolate Lava Cake", "description": "Warm chocolate cake with molten center", "price": Decimal("9.99"), "cost": Decimal("3.00"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
-            {"name": "New York Cheesecake", "description": "Classic creamy cheesecake", "price": Decimal("8.99"), "cost": Decimal("2.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
-            {"name": "Ice Cream Sundae", "description": "Three scoops with toppings", "price": Decimal("7.99"), "cost": Decimal("2.00"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_gluten_free": True},
-            {"name": "Apple Pie", "description": "Warm apple pie with vanilla ice cream", "price": Decimal("8.99"), "cost": Decimal("2.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True},
+            {"sku": make_sku("DES"), "name": "Chocolate Lava Cake", "description": "Warm chocolate cake with molten center", "price": Decimal("9.99"), "cost": Decimal("3.00"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True},
+            {"sku": make_sku("DES"), "name": "New York Cheesecake", "description": "Classic creamy cheesecake", "price": Decimal("8.99"), "cost": Decimal("2.50"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True},
+            {"sku": make_sku("DES"), "name": "Ice Cream Sundae", "description": "Three scoops with toppings", "price": Decimal("7.99"), "cost": Decimal("2.00"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True, "is_gluten_free": True},
+            {"sku": make_sku("DES"), "name": "Apple Pie", "description": "Warm apple pie with vanilla ice cream", "price": Decimal("8.99"), "cost": Decimal("2.50"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True},
         ],
         "Beverages": [
-            {"name": "Fresh Lemonade", "description": "House-made lemonade", "price": Decimal("4.99"), "cost": Decimal("1.00"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
-            {"name": "Iced Tea", "description": "Freshly brewed iced tea", "price": Decimal("3.99"), "cost": Decimal("0.75"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
-            {"name": "Coffee", "description": "Premium roasted coffee", "price": Decimal("3.49"), "cost": Decimal("0.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
-            {"name": "Soft Drinks", "description": "Coca-Cola, Sprite, or Fanta", "price": Decimal("2.99"), "cost": Decimal("0.50"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
-            {"name": "Craft Beer", "description": "Selection of local craft beers", "price": Decimal("7.99"), "cost": Decimal("3.00"), "subcategory_id": subcategory_id, "is_available": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
+            {"sku": make_sku("BEV"), "name": "Fresh Lemonade", "description": "House-made lemonade", "price": Decimal("4.99"), "cost": Decimal("1.00"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
+            {"sku": make_sku("BEV"), "name": "Iced Tea", "description": "Freshly brewed iced tea", "price": Decimal("3.99"), "cost": Decimal("0.75"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
+            {"sku": make_sku("BEV"), "name": "Coffee", "description": "Premium roasted coffee", "price": Decimal("3.49"), "cost": Decimal("0.50"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
+            {"sku": make_sku("BEV"), "name": "Soft Drinks", "description": "Coca-Cola, Sprite, or Fanta", "price": Decimal("2.99"), "cost": Decimal("0.50"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
+            {"sku": make_sku("BEV"), "name": "Craft Beer", "description": "Selection of local craft beers", "price": Decimal("7.99"), "cost": Decimal("3.00"), "subcategory_id": subcategory_id, "is_active": True, "is_vegetarian": True, "is_vegan": True, "is_gluten_free": True},
         ],
     }
     return items.get(category_name, [])
