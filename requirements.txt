@@ -1,13 +1,13 @@
 ﻿# Restaurant SaaS - Production Dependencies
-# Optimized for Railway Deployment (CPU-only Torch, no dev tools)
+# Optimized for Fly.io Deployment (CPU-only Torch, no dev tools)
 
 --extra-index-url https://download.pytorch.org/whl/cpu
 
 # ============================================
 # Core ML (CPU Optimized)
 # ============================================
-# Explicitly request CPU version of torch to save space (2GB+ savings)
-torch>=2.5.0+cpu
+# Use specific CPU version of torch to save space (2GB+ savings)
+torch==2.5.1+cpu
 sentence-transformers>=2.6.0
 
 # ============================================
