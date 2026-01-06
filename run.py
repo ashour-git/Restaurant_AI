@@ -13,6 +13,9 @@ import os
 import sys
 from pathlib import Path
 
+# Disable CUDA for CPU-only mode (avoids GPU compatibility issues)
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 # Add project paths
 ROOT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT_DIR / "backend"))

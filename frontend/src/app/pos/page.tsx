@@ -190,8 +190,20 @@ export default function POSPage() {
                   onClick={() => addToCart(item)}
                   className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700 text-left hover:shadow-md hover:border-blue-300 transition-all group"
                 >
-                  <div className="h-16 sm:h-24 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 rounded-lg mb-2 sm:mb-3 flex items-center justify-center group-hover:from-blue-50 group-hover:to-blue-100 transition-colors">
-                    <UtensilsCrossed className="h-6 w-6 sm:h-8 sm:w-8 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                  <div className="h-16 sm:h-24 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 rounded-lg mb-2 sm:mb-3 flex items-center justify-center group-hover:from-blue-50 group-hover:to-blue-100 transition-colors overflow-hidden relative">
+                    {item.image_url ? (
+                      <img 
+                        src={item.image_url} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => { 
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop'; 
+                        }}
+                      />
+                    ) : (
+                      <UtensilsCrossed className="h-6 w-6 sm:h-8 sm:w-8 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                    )}
                   </div>
                   <h3 className="font-medium text-sm sm:text-base text-slate-900 dark:text-white truncate">
                     {item.name}

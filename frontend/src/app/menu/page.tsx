@@ -202,13 +202,25 @@ export default function MenuPage() {
               key={item.id}
               className={clsx(
                 'bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden',
-                !item.is_available && 'opacity-60'
+                !item.is_active && 'opacity-60'
               )}
             >
-              {/* Image placeholder */}
-              <div className="h-32 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center relative">
-                <UtensilsCrossed className="h-10 w-10 text-slate-400" />
-                {!item.is_available && (
+              {/* Food Image */}
+              <div className="h-32 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center relative overflow-hidden">
+                {item.image_url ? (
+                  <img 
+                    src={item.image_url} 
+                    alt={item.name} 
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    onError={(e) => { 
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop'; 
+                    }}
+                  />
+                ) : (
+                  <UtensilsCrossed className="h-10 w-10 text-slate-400" />
+                )}
+                {!item.is_active && (
                   <span className="absolute top-2 left-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
                     Unavailable
                   </span>

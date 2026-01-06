@@ -155,6 +155,8 @@ class MenuItemResponse(MenuItemBase, TimestampMixin):
     id: int
     sku: str
     subcategory_id: int
+    category: str | None = None  # Category name for frontend display
+    subcategory_name: str | None = None  # Subcategory name for display
 
 
 class MenuItemWithCategory(MenuItemResponse):

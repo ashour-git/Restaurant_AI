@@ -95,8 +95,10 @@ async def lifespan(app: FastAPI):
 async def seed_initial_data(async_session_maker):
     """Seed database with initial data if empty."""
     from sqlalchemy import select
-    from app.models.models import Category, MenuItem, Subcategory
+    from app.models.models import Category, MenuItem, Subcategory, Customer, Order, OrderItem, OrderStatus, OrderType, PaymentMethod, PaymentStatus, LoyaltyTier
     from decimal import Decimal
+    from datetime import datetime, timedelta
+    import random
     
     async with async_session_maker() as session:
         # Check if data exists
@@ -116,6 +118,7 @@ async def seed_initial_data(async_session_maker):
         ]
         
         categories = {}
+        all_menu_items = []
         for cat_data in categories_data:
             category = Category(**cat_data)
             session.add(category)
@@ -136,9 +139,80 @@ async def seed_initial_data(async_session_maker):
             for item_data in menu_items:
                 item = MenuItem(**item_data)
                 session.add(item)
+                await session.flush()
+                all_menu_items.append(item)
+        
+        # Create sample customers
+        customers_data = [
+            {"first_name": "John", "last_name": "Smith", "email": "john.smith@email.com", "phone": "+1-555-0101", "loyalty_tier": LoyaltyTier.GOLD, "loyalty_points": 2500},
+            {"first_name": "Sarah", "last_name": "Johnson", "email": "sarah.j@email.com", "phone": "+1-555-0102", "loyalty_tier": LoyaltyTier.SILVER, "loyalty_points": 1200},
+            {"first_name": "Michael", "last_name": "Brown", "email": "m.brown@email.com", "phone": "+1-555-0103", "loyalty_tier": LoyaltyTier.PLATINUM, "loyalty_points": 5000},
+            {"first_name": "Emily", "last_name": "Davis", "email": "emily.d@email.com", "phone": "+1-555-0104", "loyalty_tier": LoyaltyTier.BRONZE, "loyalty_points": 350},
+            {"first_name": "David", "last_name": "Wilson", "email": "d.wilson@email.com", "phone": "+1-555-0105", "loyalty_tier": LoyaltyTier.GOLD, "loyalty_points": 3100},
+        ]
+        
+        customers = []
+        for cust_data in customers_data:
+            customer = Customer(**cust_data)
+            session.add(customer)
+            await session.flush()
+            customers.append(customer)
+        
+        # Create sample orders for the past week
+        order_types = [OrderType.DINE_IN, OrderType.TAKEOUT, OrderType.DELIVERY]
+        payment_methods = [PaymentMethod.CREDIT, PaymentMethod.CASH, PaymentMethod.MOBILE]
+        
+        for days_ago in range(7):
+            # 3-8 orders per day
+            num_orders = random.randint(3, 8)
+            for _ in range(num_orders):
+                order_date = datetime.utcnow() - timedelta(days=days_ago, hours=random.randint(10, 21), minutes=random.randint(0, 59))
+                customer = random.choice(customers)
+                
+                order = Order(
+                    customer_id=customer.id,
+                    order_type=random.choice(order_types),
+                    status=OrderStatus.COMPLETED,
+                    payment_method=random.choice(payment_methods),
+                    payment_status=PaymentStatus.COMPLETED,
+                    table_number=random.randint(1, 12) if random.random() > 0.3 else None,
+                    subtotal=Decimal("0"),
+                    tax=Decimal("0"),
+                    total=Decimal("0"),
+                    notes="",
+                    created_at=order_date,
+                    updated_at=order_date,
+                )
+                session.add(order)
+                await session.flush()
+                
+                # Add 1-4 items per order
+                num_items = random.randint(1, 4)
+                order_items = random.sample(all_menu_items, min(num_items, len(all_menu_items)))
+                subtotal = Decimal("0")
+                
+                for menu_item in order_items:
+                    quantity = random.randint(1, 2)
+                    item_total = menu_item.price * quantity
+                    subtotal += item_total
+                    
+                    order_item = OrderItem(
+                        order_id=order.id,
+                        menu_item_id=menu_item.id,
+                        quantity=quantity,
+                        unit_price=menu_item.price,
+                        total_price=item_total,
+                    )
+                    session.add(order_item)
+                
+                # Update order totals
+                tax = subtotal * Decimal("0.08")
+                order.subtotal = subtotal
+                order.tax = tax
+                order.total = subtotal + tax
         
         await session.commit()
-        logger.info("Database seeded successfully with menu items!")
+        logger.info("Database seeded successfully with menu items, customers, and orders!")
 
 
 def get_menu_items_for_category(category_name: str, subcategory_id: int) -> list:

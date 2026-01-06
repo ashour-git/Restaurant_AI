@@ -471,38 +471,160 @@ class RestaurantAssistant:
         return response
 
     def _fallback_response(self, message: str, context: str) -> str:
-        """Provide a response when API is not available."""
+        """Provide a smart response using RAG context when API is not available."""
         message_lower = message.lower()
+        df = self.knowledge_base.menu_df
 
-        # Menu queries
-        if any(word in message_lower for word in ["menu", "item", "food", "dish", "eat"]):
+        # Spicy/flavor queries - CHECK FIRST before recommendations
+        if any(word in message_lower for word in ["spicy", "hot wing", "buffalo", "jalapeño", "cajun", "sriracha", "heat"]):
+            if df is not None and not df.empty:
+                # Search for spicy items in name or description
+                name_col = "item_name" if "item_name" in df.columns else "name"
+                spicy_mask = (
+                    df["description"].str.lower().str.contains("spic|buffalo|cajun|pepper|jalap|hot sauce|chili|wing", na=False, regex=True) |
+                    df[name_col].str.lower().str.contains("buffalo|cajun|spic|hot|wing", na=False, regex=True)
+                )
+                spicy_items = df[spicy_mask]
+                if not spicy_items.empty:
+                    response = "🌶️ **Spicy Menu Items:**\n\n"
+                    for _, row in spicy_items.head(5).iterrows():
+                        price = f"${row.get('price', 0):.2f}" if pd.notna(row.get('price')) else ""
+                        desc = row.get('description', '')[:70] if pd.notna(row.get('description')) else ''
+                        response += f"• **{row.get(name_col, 'Item')}** {price}\n  {desc}\n\n"
+                    response += "🔥 *Love the heat? These items will spice things up!*"
+                    return response.strip()
+                # If no spicy items found, suggest flavor-forward options
+                return (
+                    "🌶️ **Looking for something with kick?**\n\n"
+                    "While we don't have explicitly 'spicy' items on our current menu, "
+                    "I'd recommend:\n\n"
+                    "• **Philly Cheesesteak** - Sliced beef with peppers and onions\n"
+                    "• Ask your server about adding hot sauce or jalapeños!\n\n"
+                    "🍳 *Would you like to see our full menu instead?*"
+                )
+
+        # Recommendation queries - prioritize menu items over inventory
+        if any(word in message_lower for word in ["recommend", "suggest", "try", "best", "popular", "favorite", "what's good"]):
+            # Always use menu data directly for recommendations (not RAG which might return inventory)
+            if df is not None and not df.empty:
+                name_col = "item_name" if "item_name" in df.columns else "name"
+                # Get featured/popular items
+                if "is_featured" in df.columns:
+                    featured = df[df["is_featured"] == True]
+                    if featured.empty:
+                        featured = df.sample(min(5, len(df)))
+                else:
+                    featured = df.sample(min(5, len(df)))
+                items = featured.head(5)
+                response = "🌟 **Today's Top Recommendations:**\n\n"
+                for _, row in items.iterrows():
+                    price = f"${row.get('price', 0):.2f}" if pd.notna(row.get('price')) else ""
+                    desc = row.get('description', '')[:70] if pd.notna(row.get('description')) else ''
+                    category = row.get('category', '') if pd.notna(row.get('category')) else ''
+                    response += f"• **{row.get(name_col, 'Item')}** {price}\n  _{category}_ - {desc}\n\n"
+                response += "💡 *Ask about specific dietary needs or cuisine preferences!*"
+                return response.strip()
+
+        # Menu/food queries  
+        if any(word in message_lower for word in ["menu", "item", "food", "dish", "eat", "what do you have", "show me"]):
             if context:
-                return f"Based on our menu:\n\n{context}\n\nFor more details, please specify what you're looking for!"
+                return f"📋 **From Our Menu:**\n\n{context}\n\n💡 *Ask about specific categories like appetizers, mains, or desserts!*"
             return self.knowledge_base.get_menu_summary()
 
         # Vegetarian/dietary queries
-        if any(word in message_lower for word in ["vegetarian", "vegan", "gluten"]):
-            if self.knowledge_base.menu_df is not None:
-                if "vegetarian" in message_lower:
-                    items = self.knowledge_base.menu_df[
-                        self.knowledge_base.menu_df.get("is_vegetarian", False) == True
-                    ]
+        if any(word in message_lower for word in ["vegetarian", "vegan", "gluten", "healthy", "diet"]):
+            if df is not None and not df.empty:
+                if "vegetarian" in message_lower and "is_vegetarian" in df.columns:
+                    items = df[df["is_vegetarian"] == True]
                     if not items.empty:
-                        names = items["item_name"].head(5).tolist()
-                        return "Here are some vegetarian options:\n• " + "\n• ".join(names)
+                        response = "🥗 **Vegetarian Options:**\n\n"
+                        for _, row in items.head(6).iterrows():
+                            price = f"${row.get('price', 0):.2f}" if pd.notna(row.get('price')) else ""
+                            response += f"• **{row.get('item_name', 'Item')}** {price}\n"
+                        return response
+                if "vegan" in message_lower and "is_vegan" in df.columns:
+                    items = df[df["is_vegan"] == True]
+                    if not items.empty:
+                        response = "🌱 **Vegan Options:**\n\n"
+                        for _, row in items.head(6).iterrows():
+                            price = f"${row.get('price', 0):.2f}" if pd.notna(row.get('price')) else ""
+                            response += f"• **{row.get('item_name', 'Item')}** {price}\n"
+                        return response
+                if "gluten" in message_lower and "is_gluten_free" in df.columns:
+                    items = df[df["is_gluten_free"] == True]
+                    if not items.empty:
+                        response = "🌾 **Gluten-Free Options:**\n\n"
+                        for _, row in items.head(6).iterrows():
+                            price = f"${row.get('price', 0):.2f}" if pd.notna(row.get('price')) else ""
+                            response += f"• **{row.get('item_name', 'Item')}** {price}\n"
+                        return response
+            if context:
+                return f"🥗 **Dietary Options:**\n\n{context}"
+
+        # Dessert queries
+        if any(word in message_lower for word in ["dessert", "sweet", "cake", "pie", "ice cream", "chocolate"]):
+            if context:
+                return f"🍰 **Dessert Menu:**\n\n{context}\n\n🍨 *Perfect way to end your meal!*"
+            if df is not None and not df.empty:
+                desserts = df[df["category"].str.lower().str.contains("dessert", na=False)] if "category" in df.columns else pd.DataFrame()
+                if not desserts.empty:
+                    response = "🍰 **Our Desserts:**\n\n"
+                    for _, row in desserts.head(5).iterrows():
+                        price = f"${row.get('price', 0):.2f}" if pd.notna(row.get('price')) else ""
+                        response += f"• **{row.get('item_name', 'Item')}** {price}\n  {row.get('description', '')[:60]}\n\n"
+                    return response.strip()
+
+        # Price queries
+        if any(word in message_lower for word in ["price", "cost", "cheap", "expensive", "affordable", "budget"]):
+            if df is not None and not df.empty and "price" in df.columns:
+                avg = df["price"].mean()
+                min_price = df["price"].min()
+                max_price = df["price"].max()
+                cheapest = df.nsmallest(3, "price")
+                response = f"💰 **Pricing Overview:**\n\n"
+                response += f"• Average price: **${avg:.2f}**\n"
+                response += f"• Price range: **${min_price:.2f}** - **${max_price:.2f}**\n\n"
+                response += "**Budget-Friendly Options:**\n"
+                for _, row in cheapest.iterrows():
+                    response += f"• {row.get('item_name', 'Item')} - ${row['price']:.2f}\n"
+                return response
 
         # Inventory queries
-        if any(word in message_lower for word in ["inventory", "stock", "supply"]):
+        if any(word in message_lower for word in ["inventory", "stock", "supply", "ingredient"]):
             return self.knowledge_base.get_inventory_alerts()
+
+        # Greeting
+        if any(word in message_lower for word in ["hello", "hi", "hey", "good morning", "good evening"]):
+            return (
+                "👋 **Hello! Welcome to Smart Restaurant!**\n\n"
+                "I'm your AI assistant and I can help you with:\n"
+                "• 🍽️ Menu recommendations\n"
+                "• 🥗 Dietary options (vegetarian, vegan, gluten-free)\n"
+                "• 🌶️ Spicy or mild preferences\n"
+                "• 💰 Pricing information\n"
+                "• 📦 Inventory insights\n\n"
+                "What would you like to know?"
+            )
+
+        # If we have RAG context, use it for any query
+        if context:
+            return f"📋 **Here's what I found:**\n\n{context}\n\n💡 *Need more specific info? Just ask!*"
 
         # Default response
         return (
-            "I'm the Smart Restaurant assistant! I can help you with:\n"
-            "• Menu items and recommendations\n"
-            "• Dietary options (vegetarian, vegan, gluten-free)\n"
-            "• Inventory and stock information\n"
-            "• Business insights\n\n"
-            "What would you like to know?"
+            "🤖 **I'm the Smart Restaurant Assistant!**\n\n"
+            "I can help you with:\n"
+            "• 🍽️ Menu items and recommendations\n"
+            "• 🥗 Dietary options (vegetarian, vegan, gluten-free)\n"
+            "• 🌶️ Spicy food suggestions\n"
+            "• 🍰 Desserts and drinks\n"
+            "• 💰 Pricing information\n"
+            "• 📦 Inventory and stock information\n\n"
+            "**Try asking:**\n"
+            "• *\"Recommend something spicy\"*\n"
+            "• *\"What vegetarian options do you have?\"*\n"
+            "• *\"Show me desserts\"*\n"
+            "• *\"What's popular today?\"*"
         )
 
     def clear_history(self) -> None:

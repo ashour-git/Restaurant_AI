@@ -295,7 +295,44 @@ async def get_menu_items(
     query = query.order_by(MenuItem.name).offset(skip).limit(limit)
 
     result = await db.execute(query)
-    return result.scalars().all()
+    items = result.scalars().all()
+    
+    # Build a mapping of subcategory_id to category name
+    # First get all categories and subcategories
+    cat_result = await db.execute(select(Category))
+    categories = {c.id: c.name for c in cat_result.scalars().all()}
+    
+    subcat_result = await db.execute(select(Subcategory))
+    subcategories = {s.id: (s.name, categories.get(s.category_id, "Other")) for s in subcat_result.scalars().all()}
+    
+    # Add category and subcategory names to items
+    response_items = []
+    for item in items:
+        item_dict = {
+            "id": item.id,
+            "name": item.name,
+            "description": item.description,
+            "cost": item.cost,
+            "price": item.price,
+            "prep_time_minutes": item.prep_time_minutes,
+            "calories": item.calories,
+            "is_vegetarian": item.is_vegetarian,
+            "is_vegan": item.is_vegan,
+            "is_gluten_free": item.is_gluten_free,
+            "allergens": item.allergens,
+            "image_url": item.image_url,
+            "is_active": item.is_active,
+            "is_featured": item.is_featured,
+            "sku": item.sku,
+            "subcategory_id": item.subcategory_id,
+            "created_at": item.created_at,
+            "updated_at": item.updated_at,
+            "subcategory_name": subcategories.get(item.subcategory_id, ("Other", "Other"))[0],
+            "category": subcategories.get(item.subcategory_id, ("Other", "Other"))[1],
+        }
+        response_items.append(MenuItemResponse(**item_dict))
+    
+    return response_items
 
 
 @router.post("/items", response_model=MenuItemResponse, status_code=status.HTTP_201_CREATED)
