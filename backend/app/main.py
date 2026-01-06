@@ -95,7 +95,7 @@ async def lifespan(app: FastAPI):
 async def seed_initial_data(async_session_maker):
     """Seed database with initial data if empty."""
     from sqlalchemy import select
-    from app.models.models import Category, MenuItem, Subcategory, Customer, Order, OrderItem, OrderStatus, OrderType, PaymentMethod, PaymentStatus, LoyaltyTier
+    from app.models.models import Category, MenuItem, Subcategory, Customer, Order, OrderItem, OrderStatus, OrderType, LoyaltyTier
     from decimal import Decimal
     from datetime import datetime, timedelta
     import random
@@ -160,7 +160,6 @@ async def seed_initial_data(async_session_maker):
         
         # Create sample orders for the past week
         order_types = [OrderType.DINE_IN, OrderType.TAKEOUT, OrderType.DELIVERY]
-        payment_methods = [PaymentMethod.CREDIT, PaymentMethod.CASH, PaymentMethod.MOBILE]
         
         for days_ago in range(7):
             # 3-8 orders per day
@@ -173,15 +172,14 @@ async def seed_initial_data(async_session_maker):
                     customer_id=customer.id,
                     order_type=random.choice(order_types),
                     status=OrderStatus.COMPLETED,
-                    payment_method=random.choice(payment_methods),
-                    payment_status=PaymentStatus.COMPLETED,
                     table_number=random.randint(1, 12) if random.random() > 0.3 else None,
                     subtotal=Decimal("0"),
-                    tax=Decimal("0"),
+                    tax_amount=Decimal("0"),
                     total=Decimal("0"),
                     notes="",
                     created_at=order_date,
                     updated_at=order_date,
+                    completed_at=order_date,
                 )
                 session.add(order)
                 await session.flush()
@@ -208,7 +206,7 @@ async def seed_initial_data(async_session_maker):
                 # Update order totals
                 tax = subtotal * Decimal("0.08")
                 order.subtotal = subtotal
-                order.tax = tax
+                order.tax_amount = tax
                 order.total = subtotal + tax
         
         await session.commit()
