@@ -7,7 +7,7 @@
 # Core ML (CPU Optimized)
 # ============================================
 # Explicitly request CPU version of torch to save space (2GB+ savings)
-torch==2.2.0+cpu
+torch>=2.5.0+cpu
 sentence-transformers>=2.6.0
 
 # ============================================
@@ -64,3 +64,4 @@ httpx>=0.27.0
 pydantic>=2.6.0
 pydantic-settings>=2.2.0
 python-dotenv>=1.0.0
+email-validator>=2.1.0
