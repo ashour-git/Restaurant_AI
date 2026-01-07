@@ -20,7 +20,7 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 @router.get("/sales/summary", response_model=SalesSummary)
 async def get_sales_summary(
-    period: str = Query("today", regex="^(today|week|month|year)$"),
+    period: str = Query("today", pattern="^(today|week|month|year)$"),
     db: AsyncSession = Depends(get_db),
     current_user: Employee = Depends(get_current_active_user),
 ) -> SalesSummary:

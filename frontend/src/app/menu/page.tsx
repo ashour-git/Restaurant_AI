@@ -1,10 +1,11 @@
 'use client';
 
 import { toast } from '@/components/ui/Toast';
-import { useCategories, useCreateMenuItem, useDeleteMenuItem, useMenuItems, useUpdateMenuItem } from '@/hooks/useApi';
+import { useCategories, useSubcategories, useCreateMenuItem, useDeleteMenuItem, useMenuItems, useUpdateMenuItem } from '@/hooks/useApi';
 import { clsx } from 'clsx';
 import {
     Edit2,
+    ImageIcon,
     Loader2,
     MoreVertical,
     Plus,
@@ -20,24 +21,31 @@ interface MenuItem {
   name: string;
   description: string;
   price: number;
+  cost: number;
   category: string;
-  is_available: boolean;
+  subcategory_id: number;
+  is_active: boolean;
+  image_url: string | null;
 }
 
 interface MenuItemFormData {
   name: string;
   description: string;
   price: string;
-  category: string;
-  is_available: boolean;
+  cost: string;
+  subcategory_id: string;
+  is_active: boolean;
+  image_url: string;
 }
 
 const defaultFormData: MenuItemFormData = {
   name: '',
   description: '',
   price: '',
-  category: '',
-  is_available: true,
+  cost: '',
+  subcategory_id: '',
+  is_active: true,
+  image_url: '',
 };
 
 export default function MenuPage() {
@@ -47,10 +55,12 @@ export default function MenuPage() {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [formData, setFormData] = useState<MenuItemFormData>(defaultFormData);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // API hooks
   const { data: menuItems, isLoading } = useMenuItems();
   const { data: categories } = useCategories();
+  const { data: subcategories } = useSubcategories();
   const createMenuItem = useCreateMenuItem();
   const updateMenuItem = useUpdateMenuItem();
   const deleteMenuItem = useDeleteMenuItem();
@@ -80,8 +90,10 @@ export default function MenuPage() {
       name: item.name,
       description: item.description || '',
       price: String(item.price),
-      category: item.category || '',
-      is_available: item.is_available,
+      cost: String(item.cost || ''),
+      subcategory_id: String(item.subcategory_id || ''),
+      is_active: item.is_active !== false,
+      image_url: item.image_url || '',
     });
     setIsModalOpen(true);
     setActiveDropdown(null);
@@ -91,17 +103,27 @@ export default function MenuPage() {
     setIsModalOpen(false);
     setEditingItem(null);
     setFormData(defaultFormData);
+    setIsSubmitting(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.subcategory_id) {
+      toast.error('Please select a category');
+      return;
+    }
 
+    setIsSubmitting(true);
+    
     const data = {
       name: formData.name,
-      description: formData.description,
+      description: formData.description || null,
       price: parseFloat(formData.price),
-      category: formData.category,
-      is_available: formData.is_available,
+      cost: parseFloat(formData.cost) || parseFloat(formData.price) * 0.4,
+      subcategory_id: parseInt(formData.subcategory_id),
+      is_active: formData.is_active,
+      image_url: formData.image_url || null,
     };
 
     try {
@@ -115,6 +137,8 @@ export default function MenuPage() {
       closeModal();
     } catch (error: any) {
       toast.error(error.response?.data?.detail || 'Failed to save menu item');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -331,16 +355,35 @@ export default function MenuPage() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
+                  rows={2}
                   className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Describe the dish..."
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Category *
+                </label>
+                <select
+                  required
+                  value={formData.subcategory_id}
+                  onChange={(e) => setFormData({ ...formData, subcategory_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a category</option>
+                  {(subcategories || []).map((sub: any) => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.name} {sub.category_name ? `(${sub.category_name})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Price *
+                    Price ($) *
                   </label>
                   <input
                     type="number"
@@ -350,33 +393,51 @@ export default function MenuPage() {
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
+                    placeholder="19.99"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Category
+                    Cost ($)
                   </label>
                   <input
-                    type="text"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.cost}
+                    onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Main Course"
+                    placeholder="8.00"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <span className="flex items-center gap-1">
+                    <ImageIcon className="h-4 w-4" />
+                    Image URL
+                  </span>
+                </label>
+                <input
+                  type="url"
+                  value={formData.image_url}
+                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://images.unsplash.com/..."
+                />
               </div>
 
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  id="is_available"
-                  checked={formData.is_available}
-                  onChange={(e) => setFormData({ ...formData, is_available: e.target.checked })}
+                  id="is_active"
+                  checked={formData.is_active}
+                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                   className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                 />
-                <label htmlFor="is_available" className="text-sm text-slate-700 dark:text-slate-300">
+                <label htmlFor="is_active" className="text-sm text-slate-700 dark:text-slate-300">
                   Available for ordering
                 </label>
               </div>
@@ -385,16 +446,17 @@ export default function MenuPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700"
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={createMenuItem.isPending || updateMenuItem.isPending}
+                  disabled={isSubmitting}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {(createMenuItem.isPending || updateMenuItem.isPending) && (
+                  {isSubmitting && (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   )}
                   {editingItem ? 'Update' : 'Create'}

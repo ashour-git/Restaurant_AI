@@ -22,6 +22,13 @@ export function useCategories() {
   });
 }
 
+export function useSubcategories() {
+  return useQuery({
+    queryKey: ['subcategories'],
+    queryFn: () => menuApi.getSubcategories().then((res) => res.data),
+  });
+}
+
 export function useMenuItems(params?: {
   category_id?: number;
   available_only?: boolean;

@@ -169,14 +169,14 @@ async def delete_category(
 # ============================================================================
 
 
-@router.get("/subcategories", response_model=list[SubcategoryResponse])
+@router.get("/subcategories")
 async def get_subcategories(
     category_id: int | None = None,
     is_active: bool | None = None,
     db: AsyncSession = Depends(get_db),
-) -> list[SubcategoryResponse]:
+):
     """
-    Get all subcategories.
+    Get all subcategories with category names.
 
     Args:
         category_id: Filter by category.
@@ -184,9 +184,15 @@ async def get_subcategories(
         db: Database session.
 
     Returns:
-        List of subcategories.
+        List of subcategories with category_name.
     """
-    query = select(Subcategory).order_by(Subcategory.display_order, Subcategory.name)
+    # Get categories for name lookup
+    cat_result = await db.execute(select(Category))
+    categories = {c.id: c.name for c in cat_result.scalars().all()}
+    
+    query = select(Subcategory).order_by(
+        Subcategory.display_order, Subcategory.name
+    )
 
     if category_id is not None:
         query = query.where(Subcategory.category_id == category_id)
@@ -195,7 +201,22 @@ async def get_subcategories(
         query = query.where(Subcategory.is_active == is_active)
 
     result = await db.execute(query)
-    return result.scalars().all()
+    subcats = result.scalars().all()
+    
+    # Add category_name to each subcategory
+    response = []
+    for sub in subcats:
+        response.append({
+            "id": sub.id,
+            "name": sub.name,
+            "description": sub.description,
+            "display_order": sub.display_order,
+            "is_active": sub.is_active,
+            "category_id": sub.category_id,
+            "category_name": categories.get(sub.category_id, "Other"),
+        })
+    
+    return response
 
 
 @router.post(

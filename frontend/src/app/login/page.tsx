@@ -203,14 +203,17 @@ export default function LoginPage() {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Demo credentials: admin@restaurant.com / admin123
+                {mode === 'login' 
+                  ? "Don't have an account? Switch to Sign Up above."
+                  : "Already have an account? Switch to Sign In above."
+                }
               </p>
             </div>
           </div>
         </div>
 
         <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
-          Powered by Groq + Llama 3.3
+          Powered by AI-Driven Analytics
         </p>
       </div>
     </div>

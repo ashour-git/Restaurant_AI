@@ -145,6 +145,7 @@ export const authApi = {
 // Menu API
 export const menuApi = {
   getCategories: () => api.get('/menu/categories'),
+  getSubcategories: () => api.get('/menu/subcategories'),
   getMenuItems: (params?: { category_id?: number; available_only?: boolean }) =>
     api.get('/menu/items', { params }),
   getMenuItem: (id: number) => api.get(`/menu/items/${id}`),

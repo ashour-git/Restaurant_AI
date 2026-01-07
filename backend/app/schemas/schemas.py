@@ -99,6 +99,7 @@ class SubcategoryResponse(SubcategoryBase, TimestampMixin):
 
     id: int
     category_id: int
+    category_name: str | None = None  # Parent category name for display
 
 
 # ============================================================================
