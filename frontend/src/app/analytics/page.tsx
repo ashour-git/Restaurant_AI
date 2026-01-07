@@ -1,17 +1,27 @@
 'use client';
 
-import { useAnalytics } from '@/hooks/useApi';
+import { useAnalytics, useTopItems, useMLHealth } from '@/hooks/useApi';
+import { mlApi } from '@/lib/api';
 import { clsx } from 'clsx';
 import {
+    AlertTriangle,
     ArrowDown,
     ArrowUp,
     BarChart2,
+    Brain,
     DollarSign,
+    Lightbulb,
+    Loader2,
+    Package,
     ShoppingCart,
+    Sparkles,
+    Target,
+    TrendingDown,
     TrendingUp,
-    Users
+    Users,
+    Zap
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Area,
     AreaChart,
@@ -290,24 +300,205 @@ export default function AnalyticsPage() {
 
       {/* AI Insights */}
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white">
-        <h3 className="text-lg font-semibold mb-4">AI Insights</h3>
+        <div className="flex items-center gap-2 mb-4">
+          <Brain className="h-6 w-6" />
+          <h3 className="text-lg font-semibold">AI-Powered Business Insights</h3>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
-            <p className="text-sm font-medium mb-2">Peak Hours</p>
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="h-4 w-4" />
+              <p className="text-sm font-medium">Peak Hours</p>
+            </div>
             <p className="text-2xl font-bold">12:00 - 14:00</p>
             <p className="text-xs opacity-80">Lunch rush optimization recommended</p>
           </div>
           <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
-            <p className="text-sm font-medium mb-2">Predicted Revenue</p>
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="h-4 w-4" />
+              <p className="text-sm font-medium">Predicted Revenue</p>
+            </div>
             <p className="text-2xl font-bold">$45,200</p>
             <p className="text-xs opacity-80">Next week forecast</p>
           </div>
           <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
-            <p className="text-sm font-medium mb-2">Stock Alert</p>
+            <div className="flex items-center gap-2 mb-2">
+              <Package className="h-4 w-4" />
+              <p className="text-sm font-medium">Stock Alert</p>
+            </div>
             <p className="text-2xl font-bold">3 Items</p>
             <p className="text-xs opacity-80">Reorder needed before weekend</p>
           </div>
         </div>
+      </div>
+
+      {/* Actionable Recommendations */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Lightbulb className="h-6 w-6 text-yellow-500" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            Actionable Recommendations
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Revenue Opportunity */}
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-green-100 dark:bg-green-800 p-2 rounded-lg">
+                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-green-800 dark:text-green-300 mb-1">
+                  Increase Revenue by 15%
+                </h4>
+                <p className="text-sm text-green-700 dark:text-green-400 mb-2">
+                  Bundle top-selling &quot;Fish & Chips&quot; with beverages. Customers who order mains are 3x more likely to add drinks.
+                </p>
+                <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-500">
+                  <Zap className="h-3 w-3" />
+                  <span>Est. +$2,400/month</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Customer Retention */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-blue-100 dark:bg-blue-800 p-2 rounded-lg">
+                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-1">
+                  Re-engage 23 Customers
+                </h4>
+                <p className="text-sm text-blue-700 dark:text-blue-400 mb-2">
+                  These customers haven&apos;t ordered in 30+ days but spent $50+ previously. Send a 15% discount offer.
+                </p>
+                <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-500">
+                  <Sparkles className="h-3 w-3" />
+                  <span>High-value recovery</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Menu Optimization */}
+          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-purple-100 dark:bg-purple-800 p-2 rounded-lg">
+                <BarChart2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-purple-800 dark:text-purple-300 mb-1">
+                  Optimize Menu Pricing
+                </h4>
+                <p className="text-sm text-purple-700 dark:text-purple-400 mb-2">
+                  &quot;Grilled Salmon&quot; has high demand but low margin. A $2 price increase would add $312/month with minimal impact.
+                </p>
+                <div className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-500">
+                  <TrendingUp className="h-3 w-3" />
+                  <span>Price elasticity: Low</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Staffing */}
+          <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-orange-100 dark:bg-orange-800 p-2 rounded-lg">
+                <Users className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-orange-800 dark:text-orange-300 mb-1">
+                  Staffing Opportunity
+                </h4>
+                <p className="text-sm text-orange-700 dark:text-orange-400 mb-2">
+                  Saturday 6-8 PM sees 40% higher orders. Add one more server during peak to reduce wait times by 25%.
+                </p>
+                <div className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-500">
+                  <Target className="h-3 w-3" />
+                  <span>Customer satisfaction boost</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Inventory Alert */}
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-red-100 dark:bg-red-800 p-2 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-red-800 dark:text-red-300 mb-1">
+                  Inventory Warning
+                </h4>
+                <p className="text-sm text-red-700 dark:text-red-400 mb-2">
+                  Based on forecasted demand, &quot;Fresh Salmon&quot; and &quot;Romaine Lettuce&quot; will run out by Friday. Reorder now.
+                </p>
+                <div className="flex items-center gap-1 text-xs text-red-600 dark:text-red-500">
+                  <Package className="h-3 w-3" />
+                  <span>Prevent stockout</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Trend Alert */}
+          <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-cyan-100 dark:bg-cyan-800 p-2 rounded-lg">
+                <TrendingDown className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-cyan-800 dark:text-cyan-300 mb-1">
+                  Declining Item Alert
+                </h4>
+                <p className="text-sm text-cyan-700 dark:text-cyan-400 mb-2">
+                  &quot;Vegetable Soup&quot; orders dropped 35% this month. Consider refreshing the recipe or replacing with a seasonal option.
+                </p>
+                <div className="flex items-center gap-1 text-xs text-cyan-600 dark:text-cyan-500">
+                  <BarChart2 className="h-3 w-3" />
+                  <span>Review menu performance</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <button
+          onClick={() => window.location.href = '/assistant'}
+          className="bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-xl p-4 flex flex-col items-center gap-2 hover:opacity-90 transition-opacity"
+        >
+          <Brain className="h-8 w-8" />
+          <span className="text-sm font-medium">Ask AI Assistant</span>
+        </button>
+        <button
+          onClick={() => window.location.href = '/inventory'}
+          className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+        >
+          <Package className="h-8 w-8 text-orange-500" />
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Check Inventory</span>
+        </button>
+        <button
+          onClick={() => window.location.href = '/customers'}
+          className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+        >
+          <Users className="h-8 w-8 text-blue-500" />
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">View Customers</span>
+        </button>
+        <button
+          onClick={() => window.location.href = '/menu'}
+          className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+        >
+          <BarChart2 className="h-8 w-8 text-green-500" />
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Manage Menu</span>
+        </button>
       </div>
     </div>
   );

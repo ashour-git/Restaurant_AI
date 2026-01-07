@@ -28,8 +28,9 @@ interface RecommendedItem {
   item_name: string;
   score: number;
   method: string;
-  price?: number;
-  id?: number;
+  price?: number | null;
+  id?: number | null;
+  matched?: boolean;
 }
 
 export default function POSPage() {
@@ -97,28 +98,63 @@ export default function POSPage() {
       const itemIds = cart.map((item) => item.id);
       const result = await getRecommendationsMutation.mutateAsync({
         item_ids: itemIds,
-        top_k: 3
+        top_k: 5
       });
 
       if (result.recommendations && result.recommendations.length > 0) {
         // Match recommendations with menu items to get price and id
+        // Use fuzzy matching - check if menu item name contains or is contained in recommendation
         const enrichedRecs = result.recommendations.map((rec: any) => {
-          // Find matching menu item by name (item_id format is ITEM_XXXX)
-          const menuItem = menuItems?.find((m: any) => 
-            m.name.toLowerCase() === (rec.item_name || rec.name)?.toLowerCase()
+          const recName = (rec.item_name || rec.name || '').toLowerCase().trim();
+          
+          // Try exact match first, then partial match
+          let menuItem = menuItems?.find((m: any) => 
+            m.name.toLowerCase().trim() === recName
           );
+          
+          // If no exact match, try partial match (recommendation name contains menu item or vice versa)
+          if (!menuItem) {
+            menuItem = menuItems?.find((m: any) => {
+              const menuName = m.name.toLowerCase().trim();
+              return menuName.includes(recName) || recName.includes(menuName);
+            });
+          }
+          
+          // If still no match, try word-based matching (at least 2 common words)
+          if (!menuItem) {
+            const recWords = recName.split(/\s+/).filter((w: string) => w.length > 2);
+            menuItem = menuItems?.find((m: any) => {
+              const menuWords = m.name.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
+              const commonWords = recWords.filter((w: string) => menuWords.includes(w));
+              return commonWords.length >= 2;
+            });
+          }
+          
           return {
             ...rec,
-            price: menuItem?.price || 0,
+            price: menuItem?.price || null,
             id: menuItem?.id || null,
+            matched: !!menuItem,
           };
-        }).filter((rec: RecommendedItem) => rec.id !== null);
+        });
         
-        if (enrichedRecs.length > 0) {
-          setRecommendations(enrichedRecs);
-          toast.success(`Found ${enrichedRecs.length} AI recommendations for you!`);
+        // Separate matched and unmatched recommendations
+        const matchedRecs = enrichedRecs.filter((rec: any) => rec.matched);
+        const unmatchedRecs = enrichedRecs.filter((rec: any) => !rec.matched).slice(0, 3 - matchedRecs.length);
+        
+        // Combine: show matched first (clickable), then unmatched (display only)
+        const allRecs = [...matchedRecs, ...unmatchedRecs].slice(0, 3);
+        
+        if (allRecs.length > 0) {
+          setRecommendations(allRecs);
+          const clickableCount = matchedRecs.length;
+          if (clickableCount > 0) {
+            toast.success(`Found ${clickableCount} items you can add directly!`);
+          } else {
+            toast.info('AI suggestions shown - browse menu to add similar items');
+          }
         } else {
-          toast.info('No additional recommendations at this time');
+          toast.info('No recommendations available');
         }
       } else {
         toast.info('No recommendations available');
@@ -346,26 +382,35 @@ export default function POSPage() {
             {recommendations.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {recommendations.map((rec, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      if (rec.id && rec.price) {
-                        addToCart({ id: rec.id, name: rec.item_name, price: rec.price });
-                        toast.success(`Added ${rec.item_name} to cart!`);
-                        // Remove this recommendation from the list
-                        setRecommendations(prev => prev.filter((_, idx) => idx !== i));
-                      }
-                    }}
-                    className="group px-3 py-1.5 bg-white dark:bg-slate-800 rounded-full text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center gap-1"
-                  >
-                    <Plus className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <span>{rec.item_name}</span>
-                    {rec.price ? (
-                      <span className="text-blue-600 dark:text-blue-400 font-semibold ml-1">
+                  rec.matched ? (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        if (rec.id && rec.price) {
+                          addToCart({ id: rec.id, name: rec.item_name, price: Number(rec.price) });
+                          toast.success(`Added ${rec.item_name} to cart!`);
+                          setRecommendations(prev => prev.filter((_, idx) => idx !== i));
+                        }
+                      }}
+                      className="group px-3 py-1.5 bg-white dark:bg-slate-800 rounded-full text-xs font-medium text-slate-700 dark:text-slate-300 border-2 border-green-400 dark:border-green-500 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-400 transition-all duration-200 flex items-center gap-1 cursor-pointer shadow-sm"
+                    >
+                      <Plus className="h-3 w-3 text-green-500" />
+                      <span>{rec.item_name}</span>
+                      <span className="text-green-600 dark:text-green-400 font-bold ml-1">
                         ${Number(rec.price).toFixed(2)}
                       </span>
-                    ) : null}
-                  </button>
+                    </button>
+                  ) : (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-full text-xs font-medium text-slate-500 dark:text-slate-400 border border-dashed border-slate-300 dark:border-slate-600 flex items-center gap-1"
+                      title="This item is not in your current menu"
+                    >
+                      <Sparkles className="h-3 w-3 text-purple-400" />
+                      <span>{rec.item_name}</span>
+                      <span className="text-slate-400 text-[10px] ml-1">(suggestion)</span>
+                    </span>
+                  )
                 ))}
               </div>
             )}
