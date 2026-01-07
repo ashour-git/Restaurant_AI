@@ -23,10 +23,19 @@ interface CartItem {
   quantity: number;
 }
 
+interface RecommendedItem {
+  item_id: string;
+  item_name: string;
+  score: number;
+  method: string;
+  price?: number;
+  id?: number;
+}
+
 export default function POSPage() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [recommendations, setRecommendations] = useState<RecommendedItem[]>([]);
   const [tableNumber, setTableNumber] = useState<string>('');
 
   // Fetch real menu items
@@ -91,11 +100,31 @@ export default function POSPage() {
         top_k: 3
       });
 
-      if (result.recommendations) {
-        setRecommendations(result.recommendations.map((r: any) => r.item_name || r.name));
+      if (result.recommendations && result.recommendations.length > 0) {
+        // Match recommendations with menu items to get price and id
+        const enrichedRecs = result.recommendations.map((rec: any) => {
+          // Find matching menu item by name (item_id format is ITEM_XXXX)
+          const menuItem = menuItems?.find((m: any) => 
+            m.name.toLowerCase() === (rec.item_name || rec.name)?.toLowerCase()
+          );
+          return {
+            ...rec,
+            price: menuItem?.price || 0,
+            id: menuItem?.id || null,
+          };
+        }).filter((rec: RecommendedItem) => rec.id !== null);
+        
+        if (enrichedRecs.length > 0) {
+          setRecommendations(enrichedRecs);
+          toast.success(`Found ${enrichedRecs.length} AI recommendations for you!`);
+        } else {
+          toast.info('No additional recommendations at this time');
+        }
+      } else {
+        toast.info('No recommendations available');
       }
     } catch (error) {
-      // Silently fail - recommendations are optional
+      toast.error('Could not fetch recommendations');
       console.log('Could not fetch recommendations');
     }
   };
@@ -305,7 +334,7 @@ export default function POSPage() {
             <button
               onClick={fetchRecommendations}
               disabled={getRecommendationsMutation.isPending}
-              className="flex items-center text-sm text-blue-600 font-medium mb-2 hover:text-blue-700"
+              className="flex items-center text-sm text-blue-600 font-medium mb-2 hover:text-blue-700 transition-colors"
             >
               {getRecommendationsMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -317,14 +346,33 @@ export default function POSPage() {
             {recommendations.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {recommendations.map((rec, i) => (
-                  <span
+                  <button
                     key={i}
-                    className="px-2 py-1 bg-white dark:bg-slate-800 rounded-full text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600"
+                    onClick={() => {
+                      if (rec.id && rec.price) {
+                        addToCart({ id: rec.id, name: rec.item_name, price: rec.price });
+                        toast.success(`Added ${rec.item_name} to cart!`);
+                        // Remove this recommendation from the list
+                        setRecommendations(prev => prev.filter((_, idx) => idx !== i));
+                      }
+                    }}
+                    className="group px-3 py-1.5 bg-white dark:bg-slate-800 rounded-full text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center gap-1"
                   >
-                    + {rec}
-                  </span>
+                    <Plus className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span>{rec.item_name}</span>
+                    {rec.price ? (
+                      <span className="text-blue-600 dark:text-blue-400 font-semibold ml-1">
+                        ${Number(rec.price).toFixed(2)}
+                      </span>
+                    ) : null}
+                  </button>
                 ))}
               </div>
+            )}
+            {getRecommendationsMutation.isPending && (
+              <p className="text-xs text-slate-500 mt-1">
+                Analyzing your cart with AI...
+              </p>
             )}
           </div>
         )}
