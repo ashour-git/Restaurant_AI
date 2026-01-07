@@ -782,7 +782,9 @@ export default function MenuPage() {
                               {item.isValid ? (
                                 <Check className="h-4 w-4 text-green-500" />
                               ) : (
-                                <AlertTriangle className="h-4 w-4 text-amber-500" title={item.errors.join(', ')} />
+                                <span title={item.errors.join(', ')}>
+                                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                </span>
                               )}
                             </td>
                             <td className="px-3 py-2 text-slate-900 dark:text-white font-medium">
