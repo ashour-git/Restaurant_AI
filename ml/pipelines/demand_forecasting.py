@@ -9,11 +9,15 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import logging
+
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.preprocessing import LabelEncoder
+
+logger = logging.getLogger(__name__)
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -157,7 +161,7 @@ class DemandForecaster:
             >>> metrics = forecaster.train(df, group_col='item_id')
             >>> print(f"RMSE: {metrics['val_rmse']:.2f}")
         """
-        print("Preparing features...")
+        logger.info("Preparing features...")
         df = self._prepare_features(df, is_training=True, group_col=group_col)
 
         # Drop rows with NaN from lag features
@@ -193,7 +197,7 @@ class DemandForecaster:
         if lgb_params:
             default_params.update(lgb_params)
 
-        print("Training LightGBM model...")
+        logger.info("Training LightGBM model...")
         self.model = lgb.LGBMRegressor(**default_params)
 
         self.model.fit(
@@ -218,10 +222,10 @@ class DemandForecaster:
 
         self.trained_at = datetime.now()
 
-        print("\nTraining complete!")
-        print(f"Train RMSE: {metrics['train_rmse']:.4f}")
-        print(f"Val RMSE: {metrics['val_rmse']:.4f}")
-        print(f"Val R²: {metrics['val_r2']:.4f}")
+        logger.info("Training complete!")
+        logger.info(f"Train RMSE: {metrics['train_rmse']:.4f}")
+        logger.info(f"Val RMSE: {metrics['val_rmse']:.4f}")
+        logger.info(f"Val R²: {metrics['val_r2']:.4f}")
 
         return metrics
 
@@ -422,9 +426,9 @@ def train_aggregate_forecaster() -> tuple[DemandForecaster, dict[str, float]]:
         >>> forecaster, metrics = train_aggregate_forecaster()
         >>> print(f"RMSE: {metrics['val_rmse']:.2f}")
     """
-    print("=" * 60)
-    print("TRAINING AGGREGATE DEMAND FORECASTER")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("TRAINING AGGREGATE DEMAND FORECASTER")
+    logger.info("=" * 60)
 
     df = load_daily_aggregates()
 
@@ -451,9 +455,9 @@ def train_item_level_forecaster() -> tuple[DemandForecaster, dict[str, float]]:
         >>> forecaster, metrics = train_item_level_forecaster()
         >>> print(f"RMSE: {metrics['val_rmse']:.2f}")
     """
-    print("=" * 60)
-    print("TRAINING ITEM-LEVEL DEMAND FORECASTER")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("TRAINING ITEM-LEVEL DEMAND FORECASTER")
+    logger.info("=" * 60)
 
     df = load_item_daily_sales()
 
@@ -470,13 +474,16 @@ def train_item_level_forecaster() -> tuple[DemandForecaster, dict[str, float]]:
 
 
 if __name__ == "__main__":
+    # Configure logging for standalone execution
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    
     # Train both forecasters
     agg_forecaster, agg_metrics = train_aggregate_forecaster()
-    print("\nAggregate Forecaster Feature Importance:")
-    print(agg_forecaster.get_feature_importance(10))
+    logger.info("Aggregate Forecaster Feature Importance:")
+    logger.info(f"\n{agg_forecaster.get_feature_importance(10)}")
 
-    print("\n")
+    logger.info("")
 
     item_forecaster, item_metrics = train_item_level_forecaster()
-    print("\nItem-Level Forecaster Feature Importance:")
-    print(item_forecaster.get_feature_importance(10))
+    logger.info("Item-Level Forecaster Feature Importance:")
+    logger.info(f"\n{item_forecaster.get_feature_importance(10)}")

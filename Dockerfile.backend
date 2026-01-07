@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app \
     # Default env vars to prevent startup crashes
     DATABASE_URL=sqlite+aiosqlite:////data/restaurant.db \
-    SECRET_KEY=change-me-in-production \
+    # SECRET_KEY MUST be set via fly secrets or env var - no default for security
     ENVIRONMENT=production \
     DEBUG=false
 
@@ -47,5 +47,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Run application with increased timeout
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "75"]
+# Run application with production settings:
+# --limit-concurrency: Max concurrent connections
+# --limit-max-requests: Restart worker after N requests (prevents memory leaks)
+# --timeout-keep-alive: Keep-alive timeout for connections
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "75", "--limit-concurrency", "100", "--limit-max-requests", "10000"]

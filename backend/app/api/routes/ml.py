@@ -137,8 +137,8 @@ async def get_demand_forecast(request: ForecastRequest) -> ForecastResponse:
         )
 
     except Exception as e:
-        logger.error(f"Forecast error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Forecast error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate forecast. Please try again.")
 
 
 @router.post("/recommend", response_model=RecommendationResponse)
@@ -163,8 +163,8 @@ async def get_recommendations(request: RecommendationRequest) -> RecommendationR
         return RecommendationResponse(recommendations=recs, strategy_used=request.strategy)
 
     except Exception as e:
-        logger.error(f"Recommendation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Recommendation error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate recommendations. Please try again.")
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -188,8 +188,8 @@ async def chat_with_assistant(request: ChatRequest) -> ChatResponse:
         return ChatResponse(response=response, context_used=request.use_rag)
 
     except Exception as e:
-        logger.error(f"Chat error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Chat error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to process chat message. Please try again.")
 
 
 @router.post("/menu-recommendations", response_model=MenuRecommendationResponse)
@@ -222,8 +222,8 @@ async def get_menu_recommendations(
         )
 
     except Exception as e:
-        logger.error(f"Menu recommendation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Menu recommendation error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to get menu recommendations. Please try again.")
 
 
 @router.get("/menu-search")
@@ -246,8 +246,8 @@ async def search_menu(
         return {"query": query, "results": menu_results}
 
     except Exception as e:
-        logger.error(f"Menu search error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Menu search error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to search menu. Please try again.")
 
 
 # Model initialization functions
