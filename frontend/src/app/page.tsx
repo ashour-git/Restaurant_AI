@@ -9,7 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/Card';
-import { useMenuItems, useOrders } from '@/hooks/useApi';
+import { useMenuItems } from '@/hooks/useApi';
 import { analyticsApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { clsx } from 'clsx';
@@ -63,75 +63,57 @@ function StatCard({ title, value, change, icon: Icon, isLoading }: StatCardProps
 }
 
 export default function DashboardPage() {
-  // Fetch dashboard data
+  // Fetch public dashboard data (no auth required)
   const {
-    data: salesData,
-    isLoading: salesLoading,
-    refetch: refetchSales,
+    data: dashboardData,
+    isLoading: dashboardLoading,
+    refetch: refetchDashboard,
   } = useQuery({
-    queryKey: ['salesSummary'],
+    queryKey: ['publicDashboard'],
     queryFn: () =>
       analyticsApi
-        .getSalesSummary('week')
+        .getPublicDashboard()
         .then((res) => res.data)
         .catch(() => null),
     retry: false,
   });
 
-  const { data: orders, isLoading: ordersLoading } = useOrders();
   const { data: menuItems, isLoading: menuLoading } = useMenuItems();
 
-  // Calculate stats from real data or use defaults
-  // Calculate real stats from orders when salesData is unavailable
-  const calculateRevenueFromOrders = () => {
-    if (salesData?.total_revenue) {
-      return Number(salesData.total_revenue);
-    }
-    if (orders && orders.length > 0) {
-      return orders.reduce((sum: number, order: any) => sum + Number(order.total || 0), 0);
-    }
-    return 0;
-  };
-
-  const totalRevenue = calculateRevenueFromOrders();
-  const todayOrders = orders?.filter((o: any) => {
-    const orderDate = new Date(o.created_at).toDateString();
-    const today = new Date().toDateString();
-    return orderDate === today;
-  }) || [];
+  // Use dashboard data from public endpoint
+  const totalRevenue = dashboardData?.total_revenue || 0;
+  const totalOrders = dashboardData?.total_orders || 0;
+  const todayOrdersCount = dashboardData?.today_orders || 0;
+  const avgOrderValue = dashboardData?.avg_order_value || 0;
+  const recentOrders = dashboardData?.recent_orders || [];
 
   const stats = [
     {
       title: 'Total Revenue',
-      value: totalRevenue > 0 
-        ? `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        : `$${((orders?.length || 0) * 45.50).toFixed(2)}`,
+      value: `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       change: 12.5,
       icon: DollarSign,
     },
     {
-      title: 'Orders Today',
-      value: todayOrders.length > 0 ? todayOrders.length.toString() : (orders?.length?.toString() || '50'),
+      title: 'Total Orders',
+      value: totalOrders.toString(),
       change: 8.2,
       icon: ShoppingCart,
     },
     {
       title: 'Menu Items',
-      value: menuItems?.length?.toString() || '50',
+      value: menuItems?.length?.toString() || (dashboardData?.menu_items_count?.toString() || '0'),
       icon: TrendingUp,
     },
     {
-      title: 'Active Tables',
-      value: salesData?.total_orders ? Math.min(15, Math.ceil(salesData.total_orders / 10)).toString() : '12',
+      title: 'Avg Order Value',
+      value: `$${avgOrderValue.toFixed(2)}`,
       change: 5.1,
       icon: Users,
     },
   ];
 
-  const isLoading = salesLoading || ordersLoading || menuLoading;
-
-  // Get recent orders for display
-  const recentOrders = orders?.slice(0, 5) || [];
+  const isLoading = dashboardLoading || menuLoading;
 
   // Get top menu items
   const topItems = menuItems?.slice(0, 5) || [];
@@ -147,7 +129,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <Button
-          onClick={() => refetchSales()}
+          onClick={() => refetchDashboard()}
           variant="outline"
           size="sm"
           isLoading={isLoading}
@@ -174,7 +156,7 @@ export default function DashboardPage() {
             <CardTitle>Recent Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            {ordersLoading ? (
+            {dashboardLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div

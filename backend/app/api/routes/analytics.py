@@ -281,3 +281,82 @@ async def get_sales_by_category(
         )
 
     return sales_data
+
+
+@router.get("/dashboard/public")
+async def get_public_dashboard_stats(
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Get public dashboard statistics for demo/portfolio purposes.
+    No authentication required.
+    """
+    from datetime import datetime, timedelta
+    
+    now = datetime.now()
+    week_ago = now - timedelta(days=7)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Total revenue (all completed orders)
+    total_revenue_result = await db.execute(
+        select(func.sum(Order.total)).where(Order.status == OrderStatus.COMPLETED)
+    )
+    total_revenue = total_revenue_result.scalar() or Decimal("0.00")
+    
+    # Total orders
+    total_orders_result = await db.execute(
+        select(func.count(Order.id)).where(Order.status == OrderStatus.COMPLETED)
+    )
+    total_orders = total_orders_result.scalar() or 0
+    
+    # Today's orders
+    today_orders_result = await db.execute(
+        select(func.count(Order.id)).where(
+            Order.status == OrderStatus.COMPLETED,
+            Order.created_at >= today_start
+        )
+    )
+    today_orders = today_orders_result.scalar() or 0
+    
+    # This week's revenue
+    week_revenue_result = await db.execute(
+        select(func.sum(Order.total)).where(
+            Order.status == OrderStatus.COMPLETED,
+            Order.completed_at >= week_ago
+        )
+    )
+    week_revenue = week_revenue_result.scalar() or Decimal("0.00")
+    
+    # Menu items count
+    menu_items_result = await db.execute(
+        select(func.count(MenuItem.id)).where(MenuItem.is_active == True)
+    )
+    menu_items_count = menu_items_result.scalar() or 0
+    
+    # Recent orders (last 5)
+    recent_orders_result = await db.execute(
+        select(Order)
+        .order_by(Order.created_at.desc())
+        .limit(5)
+    )
+    recent_orders = recent_orders_result.scalars().all()
+    
+    return {
+        "total_revenue": float(total_revenue),
+        "total_orders": total_orders,
+        "today_orders": today_orders,
+        "week_revenue": float(week_revenue),
+        "menu_items_count": menu_items_count,
+        "avg_order_value": float(total_revenue / total_orders) if total_orders > 0 else 0,
+        "recent_orders": [
+            {
+                "id": o.id,
+                "order_number": o.order_number,
+                "total": float(o.total),
+                "status": o.status.value if hasattr(o.status, 'value') else str(o.status),
+                "created_at": o.created_at.isoformat() if o.created_at else None,
+                "table_number": o.table_number,
+            }
+            for o in recent_orders
+        ]
+    }
