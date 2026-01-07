@@ -250,31 +250,70 @@ async def seed_database():
 
         print(f"Created {len(employees_data)} employees")
 
-        # ========== CUSTOMERS ==========
-        customers_data = [
-            {"first_name": "Alice", "last_name": "Anderson", "email": "alice@email.com", "phone": "555-1001", "loyalty_tier": LoyaltyTier.GOLD, "loyalty_points": 2500},
-            {"first_name": "Bob", "last_name": "Baker", "email": "bob@email.com", "phone": "555-1002", "loyalty_tier": LoyaltyTier.SILVER, "loyalty_points": 1200},
-            {"first_name": "Carol", "last_name": "Clark", "email": "carol@email.com", "phone": "555-1003", "loyalty_tier": LoyaltyTier.PLATINUM, "loyalty_points": 5000},
-            {"first_name": "Daniel", "last_name": "Davis", "email": "daniel@email.com", "phone": "555-1004", "loyalty_tier": LoyaltyTier.BRONZE, "loyalty_points": 300},
-            {"first_name": "Emma", "last_name": "Evans", "email": "emma@email.com", "phone": "555-1005", "loyalty_tier": LoyaltyTier.SILVER, "loyalty_points": 850},
-            {"first_name": "Frank", "last_name": "Foster", "email": "frank@email.com", "phone": "555-1006", "loyalty_tier": LoyaltyTier.GOLD, "loyalty_points": 2100},
-            {"first_name": "Grace", "last_name": "Green", "email": "grace@email.com", "phone": "555-1007", "loyalty_tier": LoyaltyTier.BRONZE, "loyalty_points": 150},
-            {"first_name": "Henry", "last_name": "Harris", "email": "henry@email.com", "phone": "555-1008", "loyalty_tier": LoyaltyTier.SILVER, "loyalty_points": 920},
-            {"first_name": "Ivy", "last_name": "Irving", "email": "ivy@email.com", "phone": "555-1009", "loyalty_tier": LoyaltyTier.GOLD, "loyalty_points": 1850},
-            {"first_name": "Jack", "last_name": "Jackson", "email": "jack@email.com", "phone": "555-1010", "loyalty_tier": LoyaltyTier.BRONZE, "loyalty_points": 400},
-            {"first_name": "Karen", "last_name": "King", "email": "karen@email.com", "phone": "555-1011", "loyalty_tier": LoyaltyTier.PLATINUM, "loyalty_points": 6200},
-            {"first_name": "Leo", "last_name": "Lewis", "email": "leo@email.com", "phone": "555-1012", "loyalty_tier": LoyaltyTier.SILVER, "loyalty_points": 780},
-            {"first_name": "Mia", "last_name": "Moore", "email": "mia@email.com", "phone": "555-1013", "loyalty_tier": LoyaltyTier.GOLD, "loyalty_points": 2300},
-            {"first_name": "Noah", "last_name": "Nelson", "email": "noah@email.com", "phone": "555-1014", "loyalty_tier": LoyaltyTier.BRONZE, "loyalty_points": 220},
-            {"first_name": "Olivia", "last_name": "Owen", "email": "olivia@email.com", "phone": "555-1015", "loyalty_tier": LoyaltyTier.SILVER, "loyalty_points": 1100},
+        # ========== CUSTOMERS (50+ diverse customers for RFM analytics) ==========
+        first_names = [
+            "Alice", "Bob", "Carol", "Daniel", "Emma", "Frank", "Grace", "Henry", "Ivy", "Jack",
+            "Karen", "Leo", "Mia", "Noah", "Olivia", "Peter", "Quinn", "Rachel", "Sam", "Tina",
+            "Uma", "Victor", "Wendy", "Xavier", "Yolanda", "Zack", "Anna", "Brian", "Chloe", "David",
+            "Elena", "Felix", "Gina", "Hugo", "Iris", "James", "Kate", "Liam", "Maya", "Nick",
+            "Ophelia", "Paul", "Ruby", "Steve", "Tara", "Ulrich", "Vera", "Will", "Xena", "Yuri",
+            "Zara", "Andrew", "Beth", "Carlos", "Diana"
         ]
+        last_names = [
+            "Anderson", "Baker", "Clark", "Davis", "Evans", "Foster", "Green", "Harris", "Irving", "Jackson",
+            "King", "Lewis", "Moore", "Nelson", "Owen", "Parker", "Quinn", "Roberts", "Smith", "Turner",
+            "Underwood", "Vargas", "Williams", "Xavier", "Young", "Zhang", "Adams", "Brown", "Chen", "Diaz",
+            "Edwards", "Flores", "Garcia", "Hill", "Ingram", "Johnson", "Kim", "Lee", "Martinez", "Nguyen",
+            "Ortiz", "Patel", "Reed", "Scott", "Taylor", "Upton", "Vega", "White", "Xu", "York",
+            "Zimmerman", "Allen", "Brooks", "Campbell", "Douglas"
+        ]
+        
+        # Customer types for varied RFM patterns
+        customer_types = [
+            # Champions - high frequency, high value, recent
+            {"tier": LoyaltyTier.PLATINUM, "points_range": (4000, 8000), "visit_pattern": "champion"},
+            {"tier": LoyaltyTier.PLATINUM, "points_range": (5000, 10000), "visit_pattern": "champion"},
+            # Loyal Customers - regular visits
+            {"tier": LoyaltyTier.GOLD, "points_range": (2000, 4000), "visit_pattern": "loyal"},
+            {"tier": LoyaltyTier.GOLD, "points_range": (1800, 3500), "visit_pattern": "loyal"},
+            {"tier": LoyaltyTier.GOLD, "points_range": (2200, 3800), "visit_pattern": "loyal"},
+            # Potential Loyalists - newer but engaged
+            {"tier": LoyaltyTier.SILVER, "points_range": (800, 1800), "visit_pattern": "promising"},
+            {"tier": LoyaltyTier.SILVER, "points_range": (600, 1500), "visit_pattern": "promising"},
+            # At Risk - were good, now declining
+            {"tier": LoyaltyTier.GOLD, "points_range": (1500, 2500), "visit_pattern": "at_risk"},
+            {"tier": LoyaltyTier.SILVER, "points_range": (1000, 2000), "visit_pattern": "at_risk"},
+            # New Customers
+            {"tier": LoyaltyTier.BRONZE, "points_range": (50, 300), "visit_pattern": "new"},
+            {"tier": LoyaltyTier.BRONZE, "points_range": (100, 400), "visit_pattern": "new"},
+            # Lost/Hibernating
+            {"tier": LoyaltyTier.BRONZE, "points_range": (200, 800), "visit_pattern": "lost"},
+            {"tier": LoyaltyTier.SILVER, "points_range": (500, 1200), "visit_pattern": "lost"},
+        ]
+        
+        customers_data = []
+        for i in range(55):
+            ctype = random.choice(customer_types)
+            points = random.randint(*ctype["points_range"])
+            customers_data.append({
+                "first_name": first_names[i % len(first_names)],
+                "last_name": last_names[i % len(last_names)],
+                "email": f"{first_names[i % len(first_names)].lower()}.{last_names[i % len(last_names)].lower()}{i}@email.com",
+                "phone": f"555-{1001 + i:04d}",
+                "loyalty_tier": ctype["tier"],
+                "loyalty_points": points,
+                "_visit_pattern": ctype["visit_pattern"],  # Internal tracking for order generation
+            })
 
         customer_ids = []
+        customer_patterns = {}  # Store patterns for order generation
         for cust_data in customers_data:
+            pattern = cust_data.pop("_visit_pattern", "loyal")  # Remove internal field
             customer = Customer(**cust_data)
             session.add(customer)
             await session.flush()
             customer_ids.append(customer.id)
+            customer_patterns[customer.id] = pattern
 
         print(f"Created {len(customers_data)} customers")
 
@@ -324,11 +363,46 @@ async def seed_database():
 
         # Generate orders for last 30 days
         now = datetime.now()
-        for days_ago in range(30):
+        
+        # Customer visit patterns for RFM analytics
+        def should_customer_order(customer_id: int, days_ago: int) -> bool:
+            """Determine if a customer should have an order based on their pattern"""
+            pattern = customer_patterns.get(customer_id, "loyal")
+            
+            if pattern == "champion":
+                # Very frequent, visits 4-5 times per week, always recent
+                return random.random() < 0.6  # 60% daily chance
+            elif pattern == "loyal":
+                # Regular, visits 2-3 times per week
+                return random.random() < 0.35  # 35% daily chance
+            elif pattern == "promising":
+                # New-ish, started recently, moderate frequency
+                if days_ago > 30:
+                    return False  # New customer
+                return random.random() < 0.25
+            elif pattern == "at_risk":
+                # Was active, but declining. More orders in past, fewer recently
+                if days_ago < 20:
+                    return random.random() < 0.05  # Rare recent visits
+                return random.random() < 0.3  # Was more active before
+            elif pattern == "new":
+                # Just started, only last 14 days
+                if days_ago > 14:
+                    return False
+                return random.random() < 0.2
+            elif pattern == "lost":
+                # Haven't visited in 30+ days
+                if days_ago < 30:
+                    return False
+                return random.random() < 0.15
+            return random.random() < 0.2
+        
+        # Generate orders for last 90 days (3 months of data)
+        for days_ago in range(90):
             date = now - timedelta(days=days_ago)
             # More orders on weekends
             is_weekend = date.weekday() >= 5
-            num_orders = random.randint(15, 25) if is_weekend else random.randint(8, 15)
+            num_orders = random.randint(18, 30) if is_weekend else random.randint(10, 20)
 
             for _ in range(num_orders):
                 # Random time during operating hours (11 AM - 10 PM)
@@ -336,8 +410,15 @@ async def seed_database():
                 minute = random.randint(0, 59)
                 order_time = date.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
-                # Random customer (some orders without customer)
-                customer_id = random.choice(customer_ids) if random.random() > 0.3 else None
+                # Smart customer selection based on patterns
+                customer_id = None
+                if random.random() > 0.2:  # 80% of orders have a customer
+                    eligible_customers = [cid for cid in customer_ids if should_customer_order(cid, days_ago)]
+                    if eligible_customers:
+                        customer_id = random.choice(eligible_customers)
+                    else:
+                        customer_id = random.choice(customer_ids)  # Fallback
+                
                 employee_id = random.choice(employee_ids)
                 order_type = random.choice(order_types)
 
@@ -358,7 +439,7 @@ async def seed_database():
                     subtotal=Decimal("0"),
                     tax_amount=Decimal("0"),
                     discount_amount=Decimal("0"),
-                    tip_amount=Decimal(str(random.choice([0, 2, 3, 5, 8, 10]))) if status == OrderStatus.COMPLETED else Decimal("0"),
+                    tip_amount=Decimal(str(random.choice([0, 2, 3, 5, 8, 10, 12, 15]))) if status == OrderStatus.COMPLETED else Decimal("0"),
                     total=Decimal("0"),
                     created_at=order_time,
                     completed_at=order_time + timedelta(minutes=random.randint(20, 45)) if status == OrderStatus.COMPLETED else None,
@@ -372,7 +453,7 @@ async def seed_database():
         # Now create order items for each order
         for order in orders_to_create:
             num_items = random.randint(2, 5)
-            selected_items = random.sample(menu_item_ids, num_items)
+            selected_items = random.sample(menu_item_ids, min(num_items, len(menu_item_ids)))
             subtotal = Decimal("0")
 
             for item_id in selected_items:

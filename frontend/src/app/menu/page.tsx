@@ -4,17 +4,22 @@ import { toast } from '@/components/ui/Toast';
 import { useCategories, useSubcategories, useCreateMenuItem, useDeleteMenuItem, useMenuItems, useUpdateMenuItem } from '@/hooks/useApi';
 import { clsx } from 'clsx';
 import {
+    AlertTriangle,
+    Check,
+    Download,
     Edit2,
+    FileSpreadsheet,
     ImageIcon,
     Loader2,
     MoreVertical,
     Plus,
     Search,
     Trash2,
+    Upload,
     UtensilsCrossed,
     X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 interface MenuItem {
   id: number;
@@ -38,6 +43,18 @@ interface MenuItemFormData {
   image_url: string;
 }
 
+interface BulkImportItem {
+  name: string;
+  description: string;
+  price: number;
+  cost: number;
+  category: string;
+  is_active: boolean;
+  image_url: string;
+  isValid: boolean;
+  errors: string[];
+}
+
 const defaultFormData: MenuItemFormData = {
   name: '',
   description: '',
@@ -56,6 +73,12 @@ export default function MenuPage() {
   const [formData, setFormData] = useState<MenuItemFormData>(defaultFormData);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Bulk import state
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [bulkItems, setBulkItems] = useState<BulkImportItem[]>([]);
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
 
   // API hooks
   const { data: menuItems, isLoading } = useMenuItems();
@@ -154,6 +177,161 @@ export default function MenuPage() {
     }
   };
 
+  // ========== BULK IMPORT FUNCTIONS ==========
+  const downloadTemplate = () => {
+    const template = `name,description,price,cost,category,is_active,image_url
+"Margherita Pizza","Classic pizza with tomato, mozzarella, and basil",14.99,5.50,"Main Course",true,""
+"Caesar Salad","Fresh romaine lettuce with Caesar dressing",9.99,3.00,"Starters",true,""
+"Chocolate Cake","Rich dark chocolate layer cake",8.99,2.50,"Desserts",true,""`;
+    
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'menu_import_template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast.success('Template downloaded!');
+  };
+
+  const parseCSV = (text: string): BulkImportItem[] => {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+    
+    const headers = lines[0].toLowerCase().split(',').map(h => h.replace(/"/g, '').trim());
+    const items: BulkImportItem[] = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (const char of lines[i]) {
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+      
+      const errors: string[] = [];
+      const name = values[headers.indexOf('name')] || '';
+      const description = values[headers.indexOf('description')] || '';
+      const priceStr = values[headers.indexOf('price')] || '0';
+      const costStr = values[headers.indexOf('cost')] || '0';
+      const category = values[headers.indexOf('category')] || '';
+      const isActiveStr = values[headers.indexOf('is_active')] || 'true';
+      const imageUrl = values[headers.indexOf('image_url')] || '';
+      
+      const price = parseFloat(priceStr);
+      const cost = parseFloat(costStr);
+      const isActive = isActiveStr.toLowerCase() !== 'false';
+      
+      if (!name) errors.push('Name is required');
+      if (isNaN(price) || price <= 0) errors.push('Invalid price');
+      if (!category) errors.push('Category is required');
+      
+      items.push({
+        name,
+        description,
+        price: isNaN(price) ? 0 : price,
+        cost: isNaN(cost) ? price * 0.4 : cost,
+        category,
+        is_active: isActive,
+        image_url: imageUrl,
+        isValid: errors.length === 0,
+        errors,
+      });
+    }
+    
+    return items;
+  };
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const items = parseCSV(text);
+      setBulkItems(items);
+      
+      const validCount = items.filter(i => i.isValid).length;
+      toast.info(`Found ${items.length} items (${validCount} valid)`);
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Reset input
+  }, []);
+
+  const handleBulkImport = async () => {
+    const validItems = bulkItems.filter(i => i.isValid);
+    if (validItems.length === 0) {
+      toast.error('No valid items to import');
+      return;
+    }
+
+    setBulkImporting(true);
+    setBulkProgress({ current: 0, total: validItems.length });
+
+    // Get subcategory mapping from categories
+    const categoryMap: Record<string, number> = {};
+    (subcategories || []).forEach((sub: any) => {
+      const catName = sub.name.toLowerCase();
+      categoryMap[catName] = sub.id;
+    });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < validItems.length; i++) {
+      const item = validItems[i];
+      setBulkProgress({ current: i + 1, total: validItems.length });
+
+      // Find matching subcategory
+      const catLower = item.category.toLowerCase();
+      let subcategoryId = categoryMap[catLower];
+      
+      // Try partial match if exact not found
+      if (!subcategoryId) {
+        const matchKey = Object.keys(categoryMap).find(k => 
+          k.includes(catLower) || catLower.includes(k)
+        );
+        subcategoryId = matchKey ? categoryMap[matchKey] : Object.values(categoryMap)[0];
+      }
+
+      try {
+        await createMenuItem.mutateAsync({
+          name: item.name,
+          description: item.description || null,
+          price: item.price,
+          cost: item.cost || item.price * 0.4,
+          subcategory_id: subcategoryId,
+          is_active: item.is_active,
+          image_url: item.image_url || null,
+        });
+        successCount++;
+      } catch (error) {
+        failCount++;
+        console.error(`Failed to import ${item.name}:`, error);
+      }
+    }
+
+    setBulkImporting(false);
+    setIsBulkModalOpen(false);
+    setBulkItems([]);
+    
+    if (failCount === 0) {
+      toast.success(`Successfully imported ${successCount} items!`);
+    } else {
+      toast.warning(`Imported ${successCount} items, ${failCount} failed`);
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
@@ -166,13 +344,22 @@ export default function MenuPage() {
             {menuItems?.length || 0} items in your menu
           </p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors self-start sm:self-auto"
-        >
-          <Plus className="h-5 w-5" />
-          <span className="sm:inline">Add Item</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsBulkModalOpen(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+          >
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Import</span>
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            <span className="sm:inline">Add Item</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -463,6 +650,187 @@ export default function MenuPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Import Modal */}
+      {isBulkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => !bulkImporting && setIsBulkModalOpen(false)}
+          />
+          <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5 text-blue-600" />
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Bulk Import Menu Items
+                </h2>
+              </div>
+              <button
+                onClick={() => !bulkImporting && setIsBulkModalOpen(false)}
+                disabled={bulkImporting}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
+              >
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="p-4 flex-1 overflow-y-auto">
+              {bulkItems.length === 0 ? (
+                <div className="space-y-4">
+                  <div className="text-center py-8 border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-xl">
+                    <Upload className="h-12 w-12 text-slate-400 mx-auto mb-3" />
+                    <p className="text-slate-600 dark:text-slate-400 mb-2">
+                      Upload a CSV file with your menu items
+                    </p>
+                    <p className="text-sm text-slate-500 mb-4">
+                      Include: name, description, price, cost, category, is_active, image_url
+                    </p>
+                    <div className="flex items-center justify-center gap-3">
+                      <label className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                        <input
+                          type="file"
+                          accept=".csv"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                        Select CSV File
+                      </label>
+                      <button
+                        onClick={downloadTemplate}
+                        className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        <Download className="h-4 w-4" />
+                        Template
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                    <h3 className="font-medium text-blue-700 dark:text-blue-400 mb-2">CSV Format Guide</h3>
+                    <ul className="text-sm text-blue-600 dark:text-blue-400 space-y-1">
+                      <li>• First row must contain headers</li>
+                      <li>• Required: name, price, category</li>
+                      <li>• Use quotes for text with commas</li>
+                      <li>• is_active: true or false</li>
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Summary */}
+                  <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
+                        Total: <strong>{bulkItems.length}</strong> items
+                      </span>
+                      <span className="text-sm text-green-600">
+                        <Check className="h-4 w-4 inline mr-1" />
+                        Valid: <strong>{bulkItems.filter(i => i.isValid).length}</strong>
+                      </span>
+                      {bulkItems.some(i => !i.isValid) && (
+                        <span className="text-sm text-amber-600">
+                          <AlertTriangle className="h-4 w-4 inline mr-1" />
+                          Errors: <strong>{bulkItems.filter(i => !i.isValid).length}</strong>
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setBulkItems([])}
+                      className="text-sm text-slate-500 hover:text-slate-700"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  {/* Progress bar */}
+                  {bulkImporting && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600 dark:text-slate-400">Importing...</span>
+                        <span className="font-medium">{bulkProgress.current} / {bulkProgress.total}</span>
+                      </div>
+                      <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-600 transition-all duration-300"
+                          style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Items preview */}
+                  <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50 dark:bg-slate-700">
+                        <tr>
+                          <th className="text-left px-3 py-2 font-medium text-slate-600 dark:text-slate-400">Status</th>
+                          <th className="text-left px-3 py-2 font-medium text-slate-600 dark:text-slate-400">Name</th>
+                          <th className="text-left px-3 py-2 font-medium text-slate-600 dark:text-slate-400">Price</th>
+                          <th className="text-left px-3 py-2 font-medium text-slate-600 dark:text-slate-400">Category</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                        {bulkItems.slice(0, 10).map((item, i) => (
+                          <tr key={i} className={clsx(
+                            !item.isValid && "bg-red-50 dark:bg-red-900/10"
+                          )}>
+                            <td className="px-3 py-2">
+                              {item.isValid ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <AlertTriangle className="h-4 w-4 text-amber-500" title={item.errors.join(', ')} />
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-slate-900 dark:text-white font-medium">
+                              {item.name || <span className="text-red-500 italic">Missing</span>}
+                            </td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-400">
+                              ${item.price.toFixed(2)}
+                            </td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-400">
+                              {item.category || <span className="text-red-500 italic">Missing</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {bulkItems.length > 10 && (
+                      <div className="px-3 py-2 bg-slate-50 dark:bg-slate-700 text-sm text-slate-500 text-center">
+                        And {bulkItems.length - 10} more items...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {bulkItems.length > 0 && (
+              <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex gap-3">
+                <button
+                  onClick={() => setBulkItems([])}
+                  disabled={bulkImporting}
+                  className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkImport}
+                  disabled={bulkImporting || !bulkItems.some(i => i.isValid)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {bulkImporting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  Import {bulkItems.filter(i => i.isValid).length} Items
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

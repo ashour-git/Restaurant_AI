@@ -65,7 +65,7 @@ export default function Sidebar() {
               <ChefHat className="h-5 w-5 text-white" />
             </div>
             <span className="text-xl font-bold text-slate-800 dark:text-white">
-              RestaurantAI
+              RestAI
             </span>
           </div>
           {isMobile && (

@@ -71,7 +71,7 @@ export default function LoginPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 rounded-2xl mb-4">
               <ChefHat className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">RestaurantAI</h1>
+            <h1 className="text-2xl font-bold text-white">RestAI</h1>
             <p className="text-blue-100 mt-1">AI-Powered Restaurant Management</p>
           </div>
 

@@ -4,6 +4,7 @@ import { toast } from '@/components/ui/Toast';
 import { useCreateOrder, useMenuItems, useRecommendations } from '@/hooks/useApi';
 import { clsx } from 'clsx';
 import {
+    Check,
     CreditCard,
     DollarSign,
     Loader2,
@@ -14,7 +15,7 @@ import {
     Trash2,
     UtensilsCrossed,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface CartItem {
   id: number;
@@ -33,11 +34,21 @@ interface RecommendedItem {
   matched?: boolean;
 }
 
+interface AddedItemAnimation {
+  id: number;
+  name: string;
+  x: number;
+  y: number;
+}
+
 export default function POSPage() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [recommendations, setRecommendations] = useState<RecommendedItem[]>([]);
   const [tableNumber, setTableNumber] = useState<string>('');
+  const [addedAnimations, setAddedAnimations] = useState<AddedItemAnimation[]>([]);
+  const [cartBounce, setCartBounce] = useState(false);
+  const [lastAddedId, setLastAddedId] = useState<number | null>(null);
 
   // Fetch real menu items
   const { data: menuItems, isLoading: menuLoading } = useMenuItems();
@@ -54,17 +65,49 @@ export default function POSPage() {
     ? (menuItems || [])
     : (menuItems || []).filter((item: any) => item.category === activeCategory);
 
-  const addToCart = (item: any) => {
+  // Clear last added animation after delay
+  useEffect(() => {
+    if (lastAddedId !== null) {
+      const timer = setTimeout(() => setLastAddedId(null), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [lastAddedId]);
+
+  const addToCart = useCallback((item: any, event?: React.MouseEvent) => {
+    // Trigger cart bounce animation
+    setCartBounce(true);
+    setTimeout(() => setCartBounce(false), 300);
+    
+    // Set last added for highlight
+    setLastAddedId(item.id);
+    
+    // Create flying animation from click position
+    if (event) {
+      const rect = (event.target as HTMLElement).getBoundingClientRect();
+      const animation: AddedItemAnimation = {
+        id: Date.now(),
+        name: item.name,
+        x: rect.left + rect.width / 2,
+        y: rect.top,
+      };
+      setAddedAnimations(prev => [...prev, animation]);
+      setTimeout(() => {
+        setAddedAnimations(prev => prev.filter(a => a.id !== animation.id));
+      }, 800);
+    }
+
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
+        toast.success(`${item.name} × ${existing.quantity + 1}`, { duration: 1500 });
         return prev.map((i) =>
           i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         );
       }
+      toast.success(`Added ${item.name}`, { duration: 1500 });
       return [...prev, { id: item.id, name: item.name, price: Number(item.price), quantity: 1 }];
     });
-  };
+  }, []);
 
   const updateQuantity = (id: number, delta: number) => {
     setCart((prev) =>
@@ -252,9 +295,27 @@ export default function POSPage() {
               {filteredItems.map((item: any) => (
                 <button
                   key={item.id}
-                  onClick={() => addToCart(item)}
-                  className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700 text-left hover:shadow-md hover:border-blue-300 transition-all group"
+                  onClick={(e) => addToCart(item, e)}
+                  className={clsx(
+                    "bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-4 border text-left hover:shadow-lg transition-all duration-200 group relative overflow-hidden",
+                    lastAddedId === item.id
+                      ? "border-green-400 ring-2 ring-green-400/50 scale-[0.98]"
+                      : "border-slate-200 dark:border-slate-700 hover:border-blue-300"
+                  )}
                 >
+                  {/* Success checkmark overlay */}
+                  <div className={clsx(
+                    "absolute inset-0 bg-green-500/10 flex items-center justify-center transition-opacity duration-300",
+                    lastAddedId === item.id ? "opacity-100" : "opacity-0"
+                  )}>
+                    <div className={clsx(
+                      "w-12 h-12 rounded-full bg-green-500 flex items-center justify-center transition-transform duration-300",
+                      lastAddedId === item.id ? "scale-100" : "scale-0"
+                    )}>
+                      <Check className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  
                   <div className="h-16 sm:h-24 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 rounded-lg mb-2 sm:mb-3 flex items-center justify-center group-hover:from-blue-50 group-hover:to-blue-100 transition-colors overflow-hidden relative">
                     {item.image_url ? (
                       <img 
@@ -276,9 +337,14 @@ export default function POSPage() {
                   <p className="text-xs sm:text-sm text-slate-500 truncate mb-1 hidden sm:block">
                     {item.description || 'Delicious menu item'}
                   </p>
-                  <p className="text-base sm:text-lg font-bold text-blue-600">
-                    ${Number(item.price).toFixed(2)}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-base sm:text-lg font-bold text-blue-600">
+                      ${Number(item.price).toFixed(2)}
+                    </p>
+                    <span className="text-xs text-green-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                      <Plus className="h-3 w-3" /> Add
+                    </span>
+                  </div>
                 </button>
               ))}
             </div>
@@ -294,9 +360,28 @@ export default function POSPage() {
 
       {/* Cart */}
       <div className="w-full lg:w-96 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col shadow-sm mt-4 lg:mt-0 max-h-[60vh] lg:max-h-none">
-        <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <div className={clsx(
+          "p-3 sm:p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between transition-all duration-200",
+          cartBounce && "bg-green-50 dark:bg-green-900/20"
+        )}>
           <div className="flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-slate-500" />
+            <div className={clsx(
+              "relative transition-transform duration-200",
+              cartBounce && "scale-125"
+            )}>
+              <ShoppingCart className={clsx(
+                "h-4 w-4 sm:h-5 sm:w-5 transition-colors",
+                cartBounce ? "text-green-500" : "text-slate-500"
+              )} />
+              {cart.length > 0 && (
+                <span className={clsx(
+                  "absolute -top-2 -right-2 h-4 w-4 text-[10px] font-bold flex items-center justify-center rounded-full transition-all duration-200",
+                  cartBounce ? "bg-green-500 text-white scale-125" : "bg-blue-600 text-white"
+                )}>
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                </span>
+              )}
+            </div>
             <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">
               Current Order
             </h2>

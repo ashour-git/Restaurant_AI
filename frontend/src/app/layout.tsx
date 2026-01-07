@@ -11,10 +11,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'RestaurantAI - Smart Restaurant Management',
+  title: 'RestAI - Smart Restaurant Management',
   description: 'AI-powered restaurant management platform with intelligent recommendations, demand forecasting, and customer analytics',
   keywords: ['restaurant', 'POS', 'AI', 'management', 'analytics'],
-  authors: [{ name: 'RestaurantAI' }],
+  authors: [{ name: 'RestAI' }],
 };
 
 export const viewport: Viewport = {

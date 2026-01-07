@@ -1,6 +1,6 @@
-# Free Hosting Options for RestaurantAI
+# Free Hosting Options for RestAI
 
-This guide covers multiple free hosting options for deploying the RestaurantAI application.
+This guide covers multiple free hosting options for deploying the RestAI application.
 
 ## Quick Overview
 
