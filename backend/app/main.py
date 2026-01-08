@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 import time
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -82,9 +83,20 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
 
-    # Initialize ML models
-    logger.info("Initializing ML models...")
-    initialize_all_models(groq_api_key=os.environ.get("GROQ_API_KEY"))
+    # Initialize ML models in background thread (non-blocking)
+    # This allows the server to start accepting requests immediately
+    # ML endpoints return 503 if models aren't ready yet
+    def init_ml_background():
+        logger.info("Starting background ML model initialization...")
+        try:
+            initialize_all_models(groq_api_key=os.environ.get("GROQ_API_KEY"))
+            logger.info("Background ML initialization complete")
+        except Exception as e:
+            logger.error(f"Background ML initialization failed: {e}")
+    
+    ml_thread = threading.Thread(target=init_ml_background, daemon=True)
+    ml_thread.start()
+    logger.info("Server ready - ML models loading in background")
 
     yield
 
@@ -301,14 +313,22 @@ def create_application() -> FastAPI:
     # Include ML router
     app.include_router(ml_router, prefix=settings.API_V1_PREFIX)
 
-    # Health check endpoint
+    # Health check endpoint - always returns healthy for Fly.io
+    # ML model status is separate from app health
     @app.get("/health", tags=["Health"])
     async def health_check():
         """Health check endpoint."""
+        from app.api.routes.ml import _demand_forecaster, _recommender, _assistant
+        
         return {
             "status": "healthy",
             "app": settings.APP_NAME,
             "version": settings.APP_VERSION,
+            "ml_models": {
+                "demand_forecaster": "ready" if _demand_forecaster else "loading",
+                "recommender": "ready" if _recommender else "loading",
+                "assistant": "ready" if _assistant else "loading",
+            }
         }
 
     @app.get("/", tags=["Root"])
