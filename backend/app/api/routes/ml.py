@@ -329,17 +329,26 @@ async def create_chat_order(
     from app.models import MenuItem, Order, OrderItem, OrderStatus, OrderType
     from sqlalchemy import select, func
     from decimal import Decimal
+    import re
     
     try:
         async for db in get_db():
-            # Find the menu item by name (case-insensitive partial match)
+            # Normalize search term - remove extra whitespace
+            search_term = re.sub(r'\s+', ' ', request.item_name.strip().lower())
+            
+            # Get all active menu items and search with flexible matching
             result = await db.execute(
-                select(MenuItem)
-                .where(MenuItem.is_active == True)
-                .where(func.lower(MenuItem.name).contains(request.item_name.lower()))
-                .limit(1)
+                select(MenuItem).where(MenuItem.is_active == True)
             )
-            menu_item = result.scalar_one_or_none()
+            menu_items = result.scalars().all()
+            
+            menu_item = None
+            for item in menu_items:
+                # Normalize item name for comparison
+                item_name_normalized = re.sub(r'\s+', ' ', item.name.strip().lower())
+                if search_term in item_name_normalized or item_name_normalized in search_term:
+                    menu_item = item
+                    break
             
             if not menu_item:
                 return ChatOrderResponse(
