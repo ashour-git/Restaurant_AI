@@ -293,6 +293,8 @@ class OrderSummary(BaseSchema):
     total: Decimal
     table_number: int | None = None
     created_at: datetime
+    items_count: int = 0
+    customer_name: str | None = None
 
 
 # ============================================================================

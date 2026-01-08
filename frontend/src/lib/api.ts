@@ -214,8 +214,10 @@ export const mlApi = {
     api.post('/ml/forecast', data),
   getRecommendations: (data: { item_ids: number[]; top_k?: number }) =>
     api.post('/ml/recommend', data),
-  chat: (data: { message: string; use_rag?: boolean }) =>
-    api.post('/ml/chat', data),
+  chat: (data: { message: string; use_rag?: boolean; sync_data?: boolean }) =>
+    api.post('/ml/chat', { ...data, sync_data: data.sync_data ?? true }),
+  createChatOrder: (data: { item_name: string; quantity: number; notes?: string }) =>
+    api.post('/ml/chat/order', data),
   searchMenu: (query: string) =>
     api.get('/ml/menu-search', { params: { query } }),
 };

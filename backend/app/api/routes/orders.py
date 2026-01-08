@@ -68,7 +68,10 @@ async def get_orders(
     Returns:
         List of order summaries.
     """
-    query = select(Order).order_by(Order.created_at.desc())
+    query = select(Order).options(
+        selectinload(Order.items),
+        selectinload(Order.customer)
+    ).order_by(Order.created_at.desc())
 
     if status_filter:
         query = query.where(Order.status == status_filter)
@@ -88,7 +91,27 @@ async def get_orders(
     query = query.offset(skip).limit(limit)
 
     result = await db.execute(query)
-    return result.scalars().all()
+    orders = result.scalars().all()
+    
+    # Convert to OrderSummary with items_count
+    from app.schemas import OrderSummary
+    summaries = []
+    for order in orders:
+        customer_name = None
+        if order.customer:
+            customer_name = f"{order.customer.first_name} {order.customer.last_name}"
+        summaries.append(OrderSummary(
+            id=order.id,
+            order_number=order.order_number,
+            order_type=order.order_type.value if hasattr(order.order_type, 'value') else str(order.order_type),
+            status=order.status.value if hasattr(order.status, 'value') else str(order.status),
+            total=order.total,
+            table_number=order.table_number,
+            created_at=order.created_at,
+            items_count=len(order.items) if order.items else 0,
+            customer_name=customer_name,
+        ))
+    return summaries
 
 
 @router.post("", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)

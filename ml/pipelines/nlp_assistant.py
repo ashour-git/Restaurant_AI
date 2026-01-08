@@ -256,15 +256,30 @@ Supplier: {row.get('supplier_id', 'N/A')}
         if self.menu_df is None or self.menu_df.empty:
             return "No menu data available."
 
-        categories = self.menu_df["category"].value_counts().to_dict()
-        avg_price = self.menu_df["price"].mean()
-
-        summary = f"Menu has {len(self.menu_df)} items across {len(categories)} categories.\n"
-        summary += f"Average price: ${avg_price:.2f}\n"
-        summary += "Categories: " + ", ".join(
-            f"{cat} ({count})" for cat, count in categories.items()
-        )
-        return summary
+        # Ensure we have the right column names
+        cat_col = "category" if "category" in self.menu_df.columns else None
+        price_col = "price" if "price" in self.menu_df.columns else None
+        name_col = "item_name" if "item_name" in self.menu_df.columns else ("name" if "name" in self.menu_df.columns else None)
+        
+        summary_parts = [f"Menu has {len(self.menu_df)} items."]
+        
+        if price_col and self.menu_df[price_col].notna().any():
+            avg_price = self.menu_df[price_col].mean()
+            summary_parts.append(f"Average price: ${avg_price:.2f}")
+        
+        if cat_col and cat_col in self.menu_df.columns:
+            categories = self.menu_df[cat_col].value_counts().to_dict()
+            summary_parts.append(f"Categories: " + ", ".join(
+                f"{cat} ({count})" for cat, count in categories.items()
+            ))
+        
+        # Add list of all menu items so AI knows what's available
+        if name_col:
+            items_list = self.menu_df[name_col].dropna().tolist()
+            if items_list:
+                summary_parts.append(f"\nAll available items: {', '.join(str(i) for i in items_list)}")
+        
+        return "\n".join(summary_parts)
 
     def get_inventory_alerts(self) -> str:
         """Get inventory alerts for low stock items."""
@@ -341,8 +356,12 @@ Active: {'Yes' if item.get('is_active', True) else 'No'}
         # Update internal DataFrame for fallback queries
         if menu_items:
             self.menu_df = pd.DataFrame(menu_items)
-            if "name" in self.menu_df.columns and "item_name" not in self.menu_df.columns:
+            # Ensure consistent column names
+            if "name" in self.menu_df.columns:
                 self.menu_df["item_name"] = self.menu_df["name"]
+            if "id" in self.menu_df.columns and "item_id" not in self.menu_df.columns:
+                self.menu_df["item_id"] = self.menu_df["id"]
+            logger.info(f"Synced {len(menu_items)} menu items to knowledge base")
         
         # Index recent orders for analytics context
         if orders:

@@ -299,6 +299,101 @@ async def chat_with_assistant(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=500, detail="Failed to process chat message. Please try again.")
 
 
+class ChatOrderRequest(BaseModel):
+    """Request to create an order from chat."""
+    
+    item_name: str = Field(..., description="Name of the menu item to order")
+    quantity: int = Field(1, ge=1, le=50, description="Quantity to order")
+    notes: str | None = Field(None, description="Special instructions")
+
+
+class ChatOrderResponse(BaseModel):
+    """Response for chat order creation."""
+    
+    success: bool
+    order_id: int | None = None
+    message: str
+    total: float | None = None
+
+
+@router.post("/chat/order", response_model=ChatOrderResponse)
+async def create_chat_order(
+    request: ChatOrderRequest,
+) -> ChatOrderResponse:
+    """
+    Create an order from chat assistant.
+    
+    This is a simplified public endpoint for AI chat ordering.
+    """
+    from app.core.database import get_db
+    from app.models import MenuItem, Order, OrderItem, OrderStatus, OrderType
+    from sqlalchemy import select, func
+    from decimal import Decimal
+    
+    try:
+        async for db in get_db():
+            # Find the menu item by name (case-insensitive partial match)
+            result = await db.execute(
+                select(MenuItem)
+                .where(MenuItem.is_active == True)
+                .where(func.lower(MenuItem.name).contains(request.item_name.lower()))
+                .limit(1)
+            )
+            menu_item = result.scalar_one_or_none()
+            
+            if not menu_item:
+                return ChatOrderResponse(
+                    success=False,
+                    message=f"Sorry, I couldn't find '{request.item_name}' on our menu. Please check the menu for available items."
+                )
+            
+            # Create the order
+            order = Order(
+                order_type=OrderType.TAKEAWAY,
+                status=OrderStatus.PENDING,
+                notes=request.notes or "Order from AI Assistant",
+            )
+            db.add(order)
+            await db.flush()
+            
+            # Calculate prices
+            unit_price = menu_item.price
+            total_price = unit_price * request.quantity
+            tax_rate = Decimal("0.085")
+            tax_amount = (total_price * tax_rate).quantize(Decimal("0.01"))
+            
+            # Create order item
+            order_item = OrderItem(
+                order_id=order.id,
+                menu_item_id=menu_item.id,
+                quantity=request.quantity,
+                unit_price=unit_price,
+                total_price=total_price,
+            )
+            db.add(order_item)
+            
+            # Update order totals
+            order.subtotal = total_price
+            order.tax_amount = tax_amount
+            order.total = total_price + tax_amount
+            
+            await db.commit()
+            
+            return ChatOrderResponse(
+                success=True,
+                order_id=order.id,
+                message=f"✅ Order #{order.id} created! {request.quantity}x {menu_item.name} for ${float(order.total):.2f}",
+                total=float(order.total)
+            )
+            
+    except Exception as e:
+        logger.error(f"Chat order error: {e}", exc_info=True)
+        return ChatOrderResponse(
+            success=False,
+            message="Sorry, there was an error creating your order. Please try again."
+        )
+
+
 @router.post("/menu-recommendations", response_model=MenuRecommendationResponse)
 async def get_menu_recommendations(
     request: MenuRecommendationRequest,

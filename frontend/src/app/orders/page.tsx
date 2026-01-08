@@ -156,7 +156,7 @@ export default function OrdersPage() {
               </div>
               <div className="flex items-center gap-1 text-xs text-slate-500 mt-2">
                 <Clock className="h-3 w-3" />
-                {formatTime(order.created_at)} - {order.items?.length || 0} items
+                {formatTime(order.created_at)} - {order.items_count || order.items?.length || 0} items
               </div>
             </div>
           ))
@@ -230,7 +230,7 @@ export default function OrdersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400 hidden md:table-cell">
-                    {order.items?.length || 0} items
+                    {order.items_count || order.items?.length || 0} items
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <span className="font-semibold text-slate-900 dark:text-white">
