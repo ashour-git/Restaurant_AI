@@ -288,29 +288,138 @@ Supplier: {row.get('supplier_id', 'N/A')}
 
         return "\n".join(alerts)
 
+    def sync_live_data(self, menu_items: list[dict], orders: list[dict] | None = None,
+                       customers: list[dict] | None = None, inventory: list[dict] | None = None) -> int:
+        """
+        Sync live database data into the knowledge base.
+        
+        This enables RAG with real-time restaurant data from the database.
+        
+        Args:
+            menu_items: List of menu item dicts from database
+            orders: Optional list of recent orders
+            customers: Optional list of customers
+            inventory: Optional list of inventory items
+            
+        Returns:
+            Number of documents indexed
+        """
+        documents = []
+        
+        # Index menu items from live database
+        for item in menu_items:
+            dietary = []
+            if item.get("is_vegetarian"):
+                dietary.append("vegetarian")
+            if item.get("is_vegan"):
+                dietary.append("vegan")
+            if item.get("is_gluten_free"):
+                dietary.append("gluten-free")
+            
+            content = f"""
+Menu Item: {item.get('name', 'Unknown')}
+Category: {item.get('category', 'N/A')}
+Description: {item.get('description', 'N/A')}
+Price: ${item.get('price', 0):.2f}
+Dietary: {', '.join(dietary) if dietary else 'None'}
+Active: {'Yes' if item.get('is_active', True) else 'No'}
+""".strip()
+            
+            documents.append({
+                "type": "menu_item",
+                "item_id": item.get("id"),
+                "item_name": item.get("name"),
+                "category": item.get("category"),
+                "price": item.get("price"),
+                "description": item.get("description"),
+                "is_vegetarian": item.get("is_vegetarian", False),
+                "is_vegan": item.get("is_vegan", False),
+                "is_gluten_free": item.get("is_gluten_free", False),
+                "content": content,
+            })
+        
+        # Update internal DataFrame for fallback queries
+        if menu_items:
+            self.menu_df = pd.DataFrame(menu_items)
+            if "name" in self.menu_df.columns and "item_name" not in self.menu_df.columns:
+                self.menu_df["item_name"] = self.menu_df["name"]
+        
+        # Index recent orders for analytics context
+        if orders:
+            order_summary = f"""Recent Order Activity:
+- Total recent orders: {len(orders)}
+- Latest orders: {', '.join([f"#{o.get('order_number', o.get('id', 'N/A'))}" for o in orders[:5]])}
+"""
+            documents.append({
+                "type": "order_analytics",
+                "content": order_summary,
+            })
+        
+        # Index customer data for insights
+        if customers:
+            customer_summary = f"""Customer Base:
+- Total customers: {len(customers)}
+- Active customers with profiles for personalized recommendations
+"""
+            documents.append({
+                "type": "customer_analytics",
+                "content": customer_summary,
+            })
+        
+        # Index inventory
+        if inventory:
+            for inv in inventory:
+                content = f"""
+Inventory Item: {inv.get('ingredient_name', inv.get('name', 'Unknown'))}
+Category: {inv.get('category', 'N/A')}
+Current Stock: {inv.get('quantity_on_hand', inv.get('quantity', 0))} {inv.get('unit', 'units')}
+Reorder Level: {inv.get('reorder_level', 'N/A')}
+""".strip()
+                documents.append({"type": "inventory", "content": content})
+            
+            self.inventory_df = pd.DataFrame(inventory)
+        
+        # Rebuild vector store with new documents
+        if documents:
+            self.vector_store = SimpleVectorStore()
+            self.vector_store.add_documents(documents)
+            logger.info(f"Synced {len(documents)} live documents to knowledge base")
+        
+        return len(documents)
+
 
 # =============================================================================
 # Groq-Powered Restaurant Assistant
 # =============================================================================
 
-SYSTEM_PROMPT = """You are an intelligent AI assistant for a restaurant management system called "Smart Restaurant SaaS".
+SYSTEM_PROMPT = """You are RestAI, an advanced AI assistant for a restaurant management system called "Smart Restaurant SaaS".
+
+You have REAL-TIME access to the restaurant's database including:
+- **Live Menu Data**: All current menu items with prices, descriptions, dietary info
+- **Recent Orders**: Latest order activity and trends
+- **Customer Insights**: Customer preferences and analytics  
+- **Inventory Status**: Stock levels and alerts
 
 Your capabilities include:
-1. **Menu Knowledge**: Answer questions about menu items, prices, ingredients, dietary options
-2. **Recommendations**: Suggest dishes based on preferences, dietary restrictions, or pairings
-3. **Inventory Insights**: Provide information about stock levels and alerts
-4. **Business Analytics**: Answer questions about sales, popular items, and trends
-5. **Order Assistance**: Help with order-related queries
+1. **Menu Expert**: Answer questions about menu items, prices, ingredients, dietary options (vegetarian, vegan, gluten-free)
+2. **Smart Recommendations**: Suggest dishes based on preferences, dietary needs, pairings, or mood
+3. **Inventory Intelligence**: Provide real-time stock levels and low-stock alerts
+4. **Business Analytics**: Answer questions about sales trends, popular items, peak hours
+5. **Order Assistance**: Help with order-related queries, modifications, upselling suggestions
+6. **Customer Intelligence**: Insights about customer preferences and dining patterns
 
-Guidelines:
-- Be helpful, friendly, and professional
-- Provide specific, actionable information when possible
-- If you don't have data, say so clearly
-- Format prices with $ and two decimal places
-- Use bullet points and formatting for clarity
-- Keep responses concise but informative
+Response Guidelines:
+- Be helpful, friendly, and professional - you represent the restaurant
+- Provide specific, actionable information using REAL data from the knowledge base
+- Always use the context provided - it contains live restaurant data
+- Format prices with $ and two decimal places (e.g., $12.99)
+- Use bullet points, emojis, and clear formatting for readability
+- For recommendations, always suggest 3-5 specific items from the menu
+- When suggesting items, include the price and key attributes
+- If asked about something not in your data, say so clearly and offer alternatives
+- Keep responses concise but comprehensive
 
-You have access to real restaurant data through a knowledge base. Use the context provided to give accurate answers."""
+IMPORTANT: The menu data you receive is REAL and CURRENT from the restaurant's database. Use it to give accurate, personalized recommendations."""
 
 
 @dataclass
@@ -630,6 +739,27 @@ class RestaurantAssistant:
     def clear_history(self) -> None:
         """Clear conversation history."""
         self.conversation_history = []
+
+    @property
+    def document_store(self) -> RestaurantKnowledgeBase:
+        """Get the document store/knowledge base."""
+        return self.knowledge_base
+    
+    def sync_knowledge(self, menu_items: list[dict], orders: list[dict] | None = None,
+                       customers: list[dict] | None = None, inventory: list[dict] | None = None) -> int:
+        """
+        Sync live database data into the assistant's knowledge base.
+        
+        Args:
+            menu_items: List of menu item dicts from database
+            orders: Optional list of recent orders
+            customers: Optional list of customers  
+            inventory: Optional list of inventory items
+            
+        Returns:
+            Number of documents indexed
+        """
+        return self.knowledge_base.sync_live_data(menu_items, orders, customers, inventory)
 
     def get_recommendations(
         self,

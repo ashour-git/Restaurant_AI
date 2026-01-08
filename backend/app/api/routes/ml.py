@@ -69,12 +69,22 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000, description="User message")
     use_rag: bool = Field(True, description="Whether to use RAG for context")
     reset_conversation: bool = Field(False, description="Reset conversation history")
+    sync_data: bool = Field(True, description="Whether to sync live DB data before responding")
 
     model_config = {
         "json_schema_extra": {
             "example": {"message": "What vegetarian options do you have?", "use_rag": True}
         }
     }
+
+
+class SyncKnowledgeRequest(BaseModel):
+    """Request to sync knowledge base with live data."""
+    
+    menu_items: list[dict[str, Any]] = Field(default_factory=list)
+    orders: list[dict[str, Any]] | None = Field(None)
+    customers: list[dict[str, Any]] | None = Field(None)
+    inventory: list[dict[str, Any]] | None = Field(None)
 
 
 class ChatResponse(BaseModel):
@@ -167,12 +177,87 @@ async def get_recommendations(request: RecommendationRequest) -> RecommendationR
         raise HTTPException(status_code=500, detail="Failed to generate recommendations. Please try again.")
 
 
+@router.post("/sync-knowledge")
+async def sync_knowledge_base(request: SyncKnowledgeRequest) -> dict[str, Any]:
+    """
+    Sync live database data into the AI assistant's knowledge base.
+    
+    This enables the AI to answer questions about current menu items,
+    recent orders, customers, and inventory from the live database.
+    """
+    if _assistant is None:
+        raise HTTPException(
+            status_code=503, detail="Assistant not initialized. Please set GROQ_API_KEY."
+        )
+
+    try:
+        count = _assistant.sync_knowledge(
+            menu_items=request.menu_items,
+            orders=request.orders,
+            customers=request.customers,
+            inventory=request.inventory,
+        )
+        return {"status": "success", "documents_indexed": count}
+    except Exception as e:
+        logger.error(f"Knowledge sync error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to sync knowledge base.")
+
+
+# Helper to fetch live data from database
+async def _fetch_live_data_for_rag() -> dict[str, Any]:
+    """Fetch live menu items, orders, customers for RAG context."""
+    from app.core.database import get_db
+    from app.models import MenuItem, Order, Customer, Inventory
+    from sqlalchemy import select
+    
+    data = {"menu_items": [], "orders": [], "customers": []}
+    
+    try:
+        async for db in get_db():
+            # Fetch menu items
+            result = await db.execute(select(MenuItem).where(MenuItem.is_active == True).limit(100))
+            items = result.scalars().all()
+            data["menu_items"] = [
+                {
+                    "id": item.id,
+                    "name": item.name,
+                    "description": item.description,
+                    "price": float(item.price) if item.price else 0,
+                    "category": item.category.name if item.category else "General",
+                    "is_vegetarian": getattr(item, "is_vegetarian", False),
+                    "is_vegan": getattr(item, "is_vegan", False),
+                    "is_gluten_free": getattr(item, "is_gluten_free", False),
+                    "is_active": item.is_active,
+                }
+                for item in items
+            ]
+            
+            # Fetch recent orders
+            result = await db.execute(select(Order).order_by(Order.created_at.desc()).limit(20))
+            orders = result.scalars().all()
+            data["orders"] = [
+                {
+                    "id": o.id,
+                    "order_number": o.order_number,
+                    "total": float(o.total) if o.total else 0,
+                    "status": o.status.value if hasattr(o.status, 'value') else str(o.status),
+                }
+                for o in orders
+            ]
+            break
+    except Exception as e:
+        logger.warning(f"Could not fetch live data for RAG: {e}")
+    
+    return data
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_assistant(request: ChatRequest) -> ChatResponse:
     """
     Chat with the AI restaurant assistant.
 
     Uses RAG for context-aware responses about menu, operations, etc.
+    Automatically syncs live database data for accurate responses.
     """
     if _assistant is None:
         raise HTTPException(
@@ -182,6 +267,18 @@ async def chat_with_assistant(request: ChatRequest) -> ChatResponse:
     try:
         if request.reset_conversation:
             _assistant.clear_history()
+        
+        # Sync live database data before responding (if enabled)
+        if request.sync_data:
+            try:
+                live_data = await _fetch_live_data_for_rag()
+                if live_data.get("menu_items"):
+                    _assistant.sync_knowledge(
+                        menu_items=live_data["menu_items"],
+                        orders=live_data.get("orders"),
+                    )
+            except Exception as sync_error:
+                logger.warning(f"RAG sync failed, using cached data: {sync_error}")
 
         response = _assistant.chat(message=request.message, include_context=request.use_rag)
 

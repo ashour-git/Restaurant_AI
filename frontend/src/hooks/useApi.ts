@@ -200,8 +200,8 @@ export function useTopItems(limit?: number) {
 
 export function useAnalytics(params?: { period?: string }) {
   return useQuery({
-    queryKey: ['analytics', params],
-    queryFn: () => analyticsApi.getDashboard().then((res) => res.data),
+    queryKey: ['analytics', params?.period || 'week'],
+    queryFn: () => analyticsApi.getDashboard({ period: params?.period }).then((res) => res.data),
     refetchInterval: 60000, // Refresh every minute
   });
 }

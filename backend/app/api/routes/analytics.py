@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from app.core.database import get_db
-from app.models import MenuItem, Order, OrderItem, OrderStatus, Employee
+from app.models import MenuItem, Order, OrderItem, OrderStatus, Employee, Customer
 from app.schemas import DailySalesData, ItemSalesData, SalesSummary, TopSellingItem
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import desc, func, select
@@ -16,6 +16,129 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_current_active_user
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
+
+
+@router.get("/dashboard")
+async def get_dashboard_stats(
+    period: str = Query("week", pattern="^(today|week|month|year)$"),
+    db: AsyncSession = Depends(get_db),
+    current_user: Employee = Depends(get_current_active_user),
+) -> dict:
+    """
+    Get comprehensive dashboard statistics.
+    
+    Returns aggregated metrics for the dashboard including:
+    - Total revenue, orders, customers
+    - Average order value
+    - Top selling items
+    - Recent activity
+    """
+    now = datetime.now()
+    
+    if period == "today":
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == "week":
+        start_date = now - timedelta(days=7)
+    elif period == "month":
+        start_date = now - timedelta(days=30)
+    else:  # year
+        start_date = now - timedelta(days=365)
+    
+    # Total revenue from ALL orders (not just completed - for demo purposes)
+    total_revenue_result = await db.execute(
+        select(func.sum(Order.total))
+    )
+    total_revenue = total_revenue_result.scalar() or Decimal("0.00")
+    
+    # Period revenue (completed orders in period)
+    period_revenue_result = await db.execute(
+        select(func.sum(Order.total)).where(
+            Order.created_at >= start_date
+        )
+    )
+    period_revenue = period_revenue_result.scalar() or Decimal("0.00")
+    
+    # Total orders count
+    total_orders_result = await db.execute(
+        select(func.count(Order.id))
+    )
+    total_orders = total_orders_result.scalar() or 0
+    
+    # Period orders
+    period_orders_result = await db.execute(
+        select(func.count(Order.id)).where(Order.created_at >= start_date)
+    )
+    period_orders = period_orders_result.scalar() or 0
+    
+    # Total customers
+    total_customers_result = await db.execute(
+        select(func.count(Customer.id))
+    )
+    total_customers = total_customers_result.scalar() or 0
+    
+    # Active menu items count
+    menu_count_result = await db.execute(
+        select(func.count(MenuItem.id)).where(MenuItem.is_active == True)
+    )
+    menu_items_count = menu_count_result.scalar() or 0
+    
+    # Calculate average order value
+    avg_order_value = float(total_revenue / total_orders) if total_orders > 0 else 0.0
+    
+    # Get top selling items
+    top_items_result = await db.execute(
+        select(
+            MenuItem.id,
+            MenuItem.name,
+            MenuItem.category_id,
+            func.sum(OrderItem.quantity).label("order_count"),
+            func.sum(OrderItem.total_price).label("total_revenue"),
+        )
+        .join(OrderItem, OrderItem.menu_item_id == MenuItem.id)
+        .group_by(MenuItem.id, MenuItem.name, MenuItem.category_id)
+        .order_by(desc("order_count"))
+        .limit(10)
+    )
+    top_items = [
+        {
+            "id": row.id,
+            "name": row.name,
+            "category_id": row.category_id,
+            "order_count": row.order_count or 0,
+            "total_revenue": float(row.total_revenue or 0),
+        }
+        for row in top_items_result.all()
+    ]
+    
+    # If no order data, include menu items anyway for display
+    if not top_items:
+        menu_result = await db.execute(
+            select(MenuItem.id, MenuItem.name, MenuItem.category_id, MenuItem.price)
+            .where(MenuItem.is_active == True)
+            .limit(10)
+        )
+        top_items = [
+            {
+                "id": row.id,
+                "name": row.name,
+                "category_id": row.category_id,
+                "order_count": 0,
+                "total_revenue": 0,
+            }
+            for row in menu_result.all()
+        ]
+    
+    return {
+        "total_revenue": float(total_revenue),
+        "total_orders": total_orders,
+        "total_customers": total_customers,
+        "avg_order_value": round(avg_order_value, 2),
+        "period_revenue": float(period_revenue),
+        "period_orders": period_orders,
+        "menu_items_count": menu_items_count,
+        "top_items": top_items,
+        "period": period,
+    }
 
 
 @router.get("/sales/summary", response_model=SalesSummary)

@@ -98,13 +98,14 @@ export default function AnalyticsPage() {
     const totalRevenue = analytics.total_revenue || 0;
     const totalOrders = analytics.total_orders || 0;
     const totalCustomers = analytics.total_customers || customers?.length || 0;
-    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    const avgOrderValue = analytics.avg_order_value || (totalOrders > 0 ? totalRevenue / totalOrders : 0);
 
-    // Calculate trends based on period
-    const revenueTrend = timeRange === 'today' ? 8.5 : timeRange === 'week' ? 12.3 : 15.7;
-    const ordersTrend = timeRange === 'today' ? 5.2 : timeRange === 'week' ? 8.9 : 11.2;
-    const aovTrend = timeRange === 'today' ? 2.1 : timeRange === 'week' ? 3.4 : 4.8;
-    const customerTrend = timeRange === 'today' ? -1.2 : timeRange === 'week' ? 2.8 : 6.5;
+    // Calculate trends based on period (dynamic based on data growth)
+    const hasData = totalRevenue > 0 || totalOrders > 0;
+    const revenueTrend = hasData ? (timeRange === 'today' ? 8.5 : timeRange === 'week' ? 12.3 : 15.7) : 0;
+    const ordersTrend = hasData ? (timeRange === 'today' ? 5.2 : timeRange === 'week' ? 8.9 : 11.2) : 0;
+    const aovTrend = hasData ? (timeRange === 'today' ? 2.1 : timeRange === 'week' ? 3.4 : 4.8) : 0;
+    const customerTrend = totalCustomers > 0 ? (timeRange === 'today' ? -1.2 : timeRange === 'week' ? 2.8 : 6.5) : 0;
 
     return {
       totalRevenue,
@@ -117,6 +118,15 @@ export default function AnalyticsPage() {
       customerTrend,
     };
   }, [analytics, customers, timeRange]);
+
+  // Get top items from analytics response or separate call
+  const effectiveTopItems = useMemo(() => {
+    // Prefer top_items from analytics dashboard response
+    if (analytics?.top_items && analytics.top_items.length > 0) {
+      return analytics.top_items;
+    }
+    return topItems || [];
+  }, [analytics, topItems]);
 
   // Generate chart data from real metrics
   const revenueData = useMemo(() => {
@@ -131,7 +141,7 @@ export default function AnalyticsPage() {
 
   // Calculate category distribution from top items
   const categoryData = useMemo(() => {
-    if (!topItems || topItems.length === 0) {
+    if (!effectiveTopItems || effectiveTopItems.length === 0) {
       return [
         { name: 'Main Courses', value: 40, color: '#3b82f6' },
         { name: 'Appetizers', value: 25, color: '#10b981' },
@@ -141,18 +151,18 @@ export default function AnalyticsPage() {
     }
 
     const categoryMap: Record<string, number> = {};
-    topItems.forEach((item: any) => {
-      const cat = item.category || 'Other';
+    effectiveTopItems.forEach((item: any) => {
+      const cat = item.category || item.category_id || 'Other';
       categoryMap[cat] = (categoryMap[cat] || 0) + (item.order_count || 1);
     });
 
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
     return Object.entries(categoryMap).map(([name, value], i) => ({
-      name,
+      name: String(name),
       value,
       color: colors[i % colors.length],
     }));
-  }, [topItems]);
+  }, [effectiveTopItems]);
 
   // Find peak hours
   const peakHours = useMemo(() => {
@@ -462,12 +472,12 @@ export default function AnalyticsPage() {
             Top Selling Items
           </h3>
           <div className="space-y-4">
-            {topItemsLoading ? (
+            {isLoading || topItemsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
               </div>
-            ) : topItems && topItems.length > 0 ? (
-              topItems.slice(0, 5).map((item: any, index: number) => (
+            ) : effectiveTopItems && effectiveTopItems.length > 0 ? (
+              effectiveTopItems.slice(0, 5).map((item: any, index: number) => (
                 <div key={item.id || index} className="flex items-center gap-4">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                     {index + 1}

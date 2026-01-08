@@ -185,7 +185,8 @@ export const inventoryApi = {
 
 // Analytics API
 export const analyticsApi = {
-  getDashboard: () => api.get('/analytics/dashboard'),
+  getDashboard: (params?: { period?: string }) => 
+    api.get('/analytics/dashboard', { params: { period: params?.period || 'week' } }),
   getPublicDashboard: () => api.get('/analytics/dashboard/public'),
   getSalesSummary: (period?: string) =>
     api.get('/analytics/sales/summary', { params: { period: period || 'week' } }),
