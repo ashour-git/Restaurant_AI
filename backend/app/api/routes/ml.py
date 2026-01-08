@@ -367,7 +367,8 @@ async def create_chat_order(
             
             # Calculate prices
             unit_price = menu_item.price
-            total_price = unit_price * request.quantity
+            quantity = Decimal(str(request.quantity))
+            total_price = unit_price * quantity
             tax_rate = Decimal("0.085")
             tax_amount = (total_price * tax_rate).quantize(Decimal("0.01"))
             
@@ -394,6 +395,11 @@ async def create_chat_order(
                 message=f"✅ Order #{order.id} created! {request.quantity}x {menu_item.name} for ${float(order.total):.2f}",
                 total=float(order.total)
             )
+        # Need to return something if the loop completes without result
+        return ChatOrderResponse(
+            success=False,
+            message="Database connection issue. Please try again."
+        )
             
     except Exception as e:
         logger.error(f"Chat order error: {e}", exc_info=True)
