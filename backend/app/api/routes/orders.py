@@ -313,6 +313,66 @@ async def cancel_order(
     return result.scalar_one()
 
 
+@router.patch("/{order_id}/status", response_model=OrderResponse)
+async def update_order_status(
+    order_id: int,
+    status_data: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: Employee = Depends(get_current_active_user),
+) -> OrderResponse:
+    """
+    Update order status.
+
+    Args:
+        order_id: Order ID.
+        status_data: Dict containing 'status' field.
+        db: Database session.
+
+    Returns:
+        Updated order.
+    """
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalar_one_or_none()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order with id {order_id} not found",
+        )
+
+    new_status_str = status_data.get("status")
+    if not new_status_str:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Status field is required",
+        )
+
+    try:
+        new_status = OrderStatus(new_status_str)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status: {new_status_str}. Valid statuses: {[s.value for s in OrderStatus]}",
+        )
+
+    order.status = new_status
+
+    if new_status == OrderStatus.COMPLETED:
+        order.completed_at = datetime.now(timezone.utc)
+
+    await db.flush()
+
+    # Reload with relationships
+    result = await db.execute(
+        select(Order)
+        .options(selectinload(Order.items).selectinload(OrderItem.menu_item))
+        .options(selectinload(Order.customer))
+        .where(Order.id == order_id)
+    )
+
+    return result.scalar_one()
+
+
 # ============================================================================
 # PAYMENTS
 # ============================================================================

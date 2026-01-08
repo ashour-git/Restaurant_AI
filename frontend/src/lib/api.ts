@@ -185,8 +185,18 @@ export const inventoryApi = {
 
 // Analytics API
 export const analyticsApi = {
-  getDashboard: (params?: { period?: string }) => 
-    api.get('/analytics/dashboard', { params: { period: params?.period || 'week' } }),
+  getDashboard: async (params?: { period?: string }) => {
+    // Try protected endpoint first, fall back to public if 404
+    try {
+      return await api.get('/analytics/dashboard', { params: { period: params?.period || 'week' } });
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        // Fallback to public dashboard
+        return api.get('/analytics/dashboard/public');
+      }
+      throw error;
+    }
+  },
   getPublicDashboard: () => api.get('/analytics/dashboard/public'),
   getSalesSummary: (period?: string) =>
     api.get('/analytics/sales/summary', { params: { period: period || 'week' } }),
