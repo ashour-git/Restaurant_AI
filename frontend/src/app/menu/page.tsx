@@ -19,7 +19,7 @@ import {
     UtensilsCrossed,
     X,
 } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 interface MenuItem {
   id: number;
@@ -73,6 +73,9 @@ export default function MenuPage() {
   const [formData, setFormData] = useState<MenuItemFormData>(defaultFormData);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Bulk import state
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -127,6 +130,8 @@ export default function MenuPage() {
     setEditingItem(null);
     setFormData(defaultFormData);
     setIsSubmitting(false);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -604,16 +609,102 @@ export default function MenuPage() {
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   <span className="flex items-center gap-1">
                     <ImageIcon className="h-4 w-4" />
-                    Image URL
+                    Menu Item Image
                   </span>
                 </label>
-                <input
-                  type="url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://images.unsplash.com/..."
-                />
+                
+                {/* Image Preview */}
+                {(imagePreview || formData.image_url) && (
+                  <div className="mb-3 relative">
+                    <img
+                      src={imagePreview || formData.image_url}
+                      alt="Preview"
+                      className="w-full h-32 object-cover rounded-lg border border-slate-200 dark:border-slate-600"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setFormData({ ...formData, image_url: '' });
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+                
+                {/* Upload Button */}
+                <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      // Validate file size (max 5MB)
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error('Image must be less than 5MB');
+                        return;
+                      }
+                      
+                      setIsUploadingImage(true);
+                      
+                      // Create preview
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const base64 = event.target?.result as string;
+                        setImagePreview(base64);
+                        // For now, store as data URL (in production, upload to cloud storage)
+                        setFormData({ ...formData, image_url: base64 });
+                        setIsUploadingImage(false);
+                      };
+                      reader.onerror = () => {
+                        toast.error('Failed to read image');
+                        setIsUploadingImage(false);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50"
+                  >
+                    {isUploadingImage ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      {isUploadingImage ? 'Processing...' : 'Upload Image'}
+                    </span>
+                  </button>
+                </div>
+                
+                {/* Or use URL */}
+                <div className="mt-2">
+                  <p className="text-xs text-slate-500 mb-1">Or paste image URL:</p>
+                  <input
+                    type="url"
+                    value={formData.image_url.startsWith('data:') ? '' : formData.image_url}
+                    onChange={(e) => {
+                      setFormData({ ...formData, image_url: e.target.value });
+                      setImagePreview(null);
+                    }}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://images.unsplash.com/..."
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-2">

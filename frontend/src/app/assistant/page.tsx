@@ -98,6 +98,9 @@ export default function AssistantPage() {
         if (isMounted) {
           const isLoaded = res.data?.models?.assistant === 'loaded';
           setIsConnected(isLoaded);
+          if (isLoaded) {
+            console.log('AI Assistant connected successfully');
+          }
         }
       } catch (err) {
         if (isMounted) {
@@ -107,21 +110,20 @@ export default function AssistantPage() {
       }
     };
 
-    // Initial check
-    checkConnection();
+    // Initial check with slight delay to ensure API is ready
+    const initialTimeout = setTimeout(checkConnection, 500);
 
-    // Retry every 5 seconds if not connected
+    // Retry every 3 seconds until connected
     const interval = setInterval(() => {
-      if (!isConnected) {
-        checkConnection();
-      }
-    }, 5000);
+      checkConnection();
+    }, 3000);
 
     return () => {
       isMounted = false;
+      clearTimeout(initialTimeout);
       clearInterval(interval);
     };
-  }, [isConnected]);
+  }, []);
 
   const sendMessage = useCallback(async () => {
     if (!input.trim() || isLoading) return;
