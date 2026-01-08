@@ -358,7 +358,7 @@ async def create_chat_order(
             
             # Create the order
             order = Order(
-                order_type=OrderType.TAKEAWAY,
+                order_type=OrderType.TAKEOUT,
                 status=OrderStatus.PENDING,
                 notes=request.notes or "Order from AI Assistant",
             )
