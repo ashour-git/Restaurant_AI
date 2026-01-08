@@ -207,30 +207,40 @@ async def sync_knowledge_base(request: SyncKnowledgeRequest) -> dict[str, Any]:
 async def _fetch_live_data_for_rag() -> dict[str, Any]:
     """Fetch live menu items, orders, customers for RAG context."""
     from app.core.database import get_db
-    from app.models import MenuItem, Order, Customer, Inventory
+    from app.models import MenuItem, Order, Subcategory, Category
     from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
     
     data = {"menu_items": [], "orders": [], "customers": []}
     
     try:
         async for db in get_db():
-            # Fetch menu items
-            result = await db.execute(select(MenuItem).where(MenuItem.is_active == True).limit(100))
+            # Fetch menu items with subcategory->category relationships
+            result = await db.execute(
+                select(MenuItem)
+                .options(selectinload(MenuItem.subcategory).selectinload(Subcategory.category))
+                .where(MenuItem.is_active == True)
+                .limit(100)
+            )
             items = result.scalars().all()
-            data["menu_items"] = [
-                {
+            
+            menu_list = []
+            for item in items:
+                cat_name = "General"
+                if item.subcategory and item.subcategory.category:
+                    cat_name = item.subcategory.category.name
+                menu_list.append({
                     "id": item.id,
                     "name": item.name,
-                    "description": item.description,
+                    "description": item.description or "",
                     "price": float(item.price) if item.price else 0,
-                    "category": item.category.name if item.category else "General",
+                    "category": cat_name,
                     "is_vegetarian": getattr(item, "is_vegetarian", False),
                     "is_vegan": getattr(item, "is_vegan", False),
                     "is_gluten_free": getattr(item, "is_gluten_free", False),
                     "is_active": item.is_active,
-                }
-                for item in items
-            ]
+                })
+            data["menu_items"] = menu_list
             
             # Fetch recent orders
             result = await db.execute(select(Order).order_by(Order.created_at.desc()).limit(20))
